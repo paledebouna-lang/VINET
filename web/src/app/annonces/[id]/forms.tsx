@@ -18,10 +18,13 @@ export function MessageForm({ listingId }: { listingId: string }) {
           rows={4}
           required
           aria-describedby="body-error"
-          defaultValue="Bonjour, votre véhicule m'intéresse. Est-il toujours disponible ? Je souhaite le voir."
+          placeholder="Bonjour, votre véhicule m'intéresse. Est-il toujours disponible ?"
         />
         <FieldError state={state} name="body" />
-        <small>Les échanges se font sur MonAuto. Vos coordonnées ne sont pas communiquées au vendeur.</small>
+        <small>
+          Les échanges se font sur MonAuto. Les numéros de téléphone et les e-mails écrits dans un message sont
+          masqués.
+        </small>
       </div>
       <button className="btn btn-primary" disabled={pending}>
         Écrire au vendeur

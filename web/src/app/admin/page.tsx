@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { resolveReport, verifySeller } from "../actions";
 import { prisma } from "@/lib/db";
-import { CATEGORIES, formatNumber, formatPrice } from "@/lib/listing";
+import { CATEGORIES, formatNumber, formatPrice, matriculeOf } from "@/lib/listing";
 import { contactOf, requireAdmin } from "@/lib/session";
 import { ModerationForm } from "./moderation-form";
 
@@ -12,14 +12,14 @@ export default async function Admin() {
   const [identities, pending, reports] = await Promise.all([
     prisma.sellerProfile.findMany({
       where: { verifiedAt: null },
-      include: { user: { select: { phoneNumber: true, email: true } } },
+      include: { user: { select: { phoneNumber: true, email: true, memberNumber: true } } },
     }),
     prisma.listing.findMany({
       where: { status: "PENDING" },
       orderBy: { createdAt: "asc" },
       include: {
         photos: { orderBy: { position: "asc" } },
-        seller: { select: { phoneNumber: true, email: true, sellerProfile: true } },
+        seller: { select: { phoneNumber: true, email: true, memberNumber: true, sellerProfile: true } },
       },
     }),
     prisma.report.findMany({
@@ -41,11 +41,17 @@ export default async function Admin() {
             <div>
               <h3 className="card-title">{profile.fullName}</h3>
               <p>
-                {profile.position}, {profile.company} · {profile.yearsExperience} an(s) d&apos;expérience
+                {[
+                  profile.company ? [profile.position, profile.company].filter(Boolean).join(", ") : "Particulier",
+                  profile.yearsExperience != null && `${profile.yearsExperience} an(s) d'expérience`,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </p>
               {/* Matricule and contact are shown to admins only. */}
               <p className="muted small">
-                Matricule : {profile.matricule} · Compte : {contactOf(profile.user)}
+                Matricule : {matriculeOf(profile.user.memberNumber, profile.company)} · Compte :{" "}
+                {contactOf(profile.user)}
               </p>
             </div>
             <form action={verifySeller}>
@@ -73,6 +79,7 @@ export default async function Admin() {
               <p className="muted small">
                 Vendeur : {listing.seller.sellerProfile?.fullName ?? "identité non renseignée"} (
                 {listing.seller.sellerProfile?.verifiedAt ? "vérifiée" : "non vérifiée"}) ·{" "}
+                {matriculeOf(listing.seller.memberNumber, listing.seller.sellerProfile?.company)} ·{" "}
                 {contactOf(listing.seller)} · VIN : {listing.vin ?? "non fourni"}
               </p>
             </div>

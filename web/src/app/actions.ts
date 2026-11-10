@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { formatPrice, listingInput, sellerProfileInput } from "@/lib/listing";
+import { formatPrice, listingInput, maskContacts, sellerProfileInput } from "@/lib/listing";
 import { sendMail } from "@/lib/mail";
 import { MAX_PHOTO_BYTES, MAX_PHOTOS, deletePhotos, storePhotos } from "@/lib/photos";
 import { requireAdmin, requireUser } from "@/lib/session";
@@ -80,6 +80,7 @@ export async function createListing(_prev: FormState, formData: FormData): Promi
     await prisma.listing.create({
       data: {
         ...parsed.data,
+        description: maskContacts(parsed.data.description),
         sellerId: user.id,
         photos: { create: photoIds.map((id, position) => ({ id, position })) },
       },
@@ -125,6 +126,7 @@ export async function updateListing(_prev: FormState, formData: FormData): Promi
         where: { id },
         data: {
           ...parsed.data,
+          description: maskContacts(parsed.data.description),
           status: "PENDING",
           rejectionReason: null,
           // Remembered across several edits until one is published.
@@ -251,7 +253,10 @@ export async function sendMessage(_prev: FormState, formData: FormData): Promise
   const isBuyer = conversation.buyerId === user.id;
   const now = new Date();
   await prisma.$transaction([
-    prisma.message.create({ data: { conversationId: conversation.id, senderId: user.id, body: parsed.data.body } }),
+    prisma.message.create({
+      // Stored already masked: neither side, nor an admin later, sees the contact details.
+      data: { conversationId: conversation.id, senderId: user.id, body: maskContacts(parsed.data.body) },
+    }),
     prisma.conversation.update({
       where: { id: conversation.id },
       data: { lastMessageAt: now, [isBuyer ? "buyerReadAt" : "sellerReadAt"]: now },

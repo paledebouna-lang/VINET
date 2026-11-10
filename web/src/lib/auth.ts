@@ -37,6 +37,8 @@ export const auth = betterAuth({
     }),
     emailOTP({
       storeOTP: "hashed",
+      // Lets a phone account add a real, verified address to receive notifications.
+      changeEmail: { enabled: true },
       sendVerificationOTP: ({ email, otp }) => deliverCode("email", email, otp),
     }),
   ],

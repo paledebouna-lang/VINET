@@ -35,6 +35,8 @@ model User {
   phoneNumber         String?
   phoneNumberVerified Boolean?
   role                String         @default("particulier")
+  // Every account gets a number at sign-up; the matricule is built from it (see matriculeOf).
+  memberNumber        Int            @unique @default(autoincrement())
   sessions            Session[]
   accounts            Account[]
   listings            Listing[]
@@ -168,11 +170,10 @@ model SellerProfile {
   userId          String    @id
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   fullName        String
-  yearsExperience Int
-  // Shown to admins only, to check the identity against the employer's records.
-  matricule       String
-  company         String
-  position        String
+  // A seller with a company is a professional and gets an "E" matricule; without one, a "P".
+  company         String?
+  position        String?
+  yearsExperience Int?
   // Set by an admin; cleared whenever the seller edits the profile.
   verifiedAt      DateTime?
 

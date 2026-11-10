@@ -56,7 +56,8 @@ export default async function Conversation({ params }: PageProps<"/messages/[id]
       </ol>
       <ReplyForm conversationId={id} />
       <p className="muted small">
-        Vos coordonnées ne sont pas communiquées. Poursuivez vos échanges ici jusqu&apos;à la visite du véhicule.
+        Vos coordonnées ne sont pas communiquées, et les numéros ou e-mails écrits dans un message sont masqués.
+        Poursuivez vos échanges ici jusqu&apos;à la visite du véhicule.
       </p>
     </div>
   );

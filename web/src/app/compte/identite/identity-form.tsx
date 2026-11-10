@@ -20,14 +20,12 @@ export function IdentityForm({ initial }: { initial: Record<string, string> }) {
   return (
     <form action={action} className="card stack">
       {input("fullName", "Nom et prénoms", { autoComplete: "name" })}
-      {input("company", "Entreprise", { autoComplete: "organization" })}
-      {input("position", "Fonction", { autoComplete: "organization-title" })}
-      {input("yearsExperience", "Années d'expérience", { inputMode: "numeric" })}
-      {input("matricule", "Matricule")}
+      {input("company", "Entreprise (facultatif)", { autoComplete: "organization", required: false })}
+      {input("position", "Fonction (facultatif)", { autoComplete: "organization-title", required: false })}
+      {input("yearsExperience", "Années d'expérience (facultatif)", { inputMode: "numeric", required: false })}
       <p className="muted small">
-        Votre nom, votre entreprise, votre fonction et votre expérience figurent sur vos annonces. Le matricule
-        sert à la vérification et n&apos;est vu que par notre équipe. Ni votre téléphone ni votre e-mail ne sont
-        affichés.
+        Ces informations figurent sur vos annonces. Votre matricule, votre téléphone et votre e-mail n&apos;y
+        apparaissent jamais.
       </p>
       <div aria-live="polite">
         {state.ok && (

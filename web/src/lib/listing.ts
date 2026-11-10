@@ -62,13 +62,45 @@ export const listingInput = z.object({
     .transform((v) => v || null),
 });
 
+// An empty optional field is stored as null, not as an empty string.
+const optionalText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max, `${max} caractères au maximum.`)
+    .transform((v) => v || null);
+
 export const sellerProfileInput = z.object({
   fullName: z.string().trim().min(3, "Indiquez vos nom et prénoms.").max(80, "80 caractères au maximum."),
-  yearsExperience: int(0, 60, "Entre 0 et 60 ans."),
-  matricule: text(40),
-  company: text(80),
-  position: text(80),
+  company: optionalText(80),
+  position: optionalText(80),
+  yearsExperience: z
+    .string()
+    .trim()
+    .regex(/^\d{0,2}$/, "Entrez un nombre d'années.")
+    .transform((v) => (v ? Number(v) : null))
+    .pipe(z.number().max(60, "60 ans au maximum.").nullable()),
 });
+
+/**
+ * The matricule MonAuto gives every account: "E" for a seller attached to a company,
+ * "P" for a private person. The number never changes; the letter follows the company field.
+ */
+export const matriculeOf = (memberNumber: number, company: string | null | undefined) =>
+  `MA-${company ? "E" : "P"}-${String(memberNumber).padStart(6, "0")}`;
+
+/**
+ * Hides phone numbers and e-mail addresses so that exchanges stay on the site.
+ * Phone numbers are recognised by their leading 0 or "+", which prices never have.
+ * shortcut: digits spelled out in words get through; add moderation if that becomes common.
+ */
+export function maskContacts(text: string) {
+  return text
+    // Ends on letters so that the full stop or comma after an address is left in place.
+    .replace(/[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}/g, "[e-mail masqué]")
+    .replace(/(?<!\d)(?:(?:\+|00)\d{1,3}[\s.-]?)?0\d(?:[\s.-]?\d){8}(?!\d)/g, "[numéro masqué]")
+    .replace(/\+\d(?:[\s.-]?\d){7,14}/g, "[numéro masqué]");
+}
 
 /** The public form of a VIN: enough to compare with the papers, not enough to clone them. */
 export function maskVin(vin: string) {

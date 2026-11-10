@@ -85,10 +85,13 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
               <p className="muted small">Vendeur</p>
               <p className="card-title">{seller.fullName}</p>
               <p>
-                {seller.position}, {seller.company}
+                {seller.company
+                  ? [seller.position, seller.company].filter(Boolean).join(", ")
+                  : "Vendeur particulier"}
               </p>
               <p className="muted small">
-                {seller.yearsExperience} an{seller.yearsExperience > 1 ? "s" : ""} d&apos;expérience ·{" "}
+                {seller.yearsExperience != null &&
+                  `${seller.yearsExperience} an${seller.yearsExperience > 1 ? "s" : ""} d'expérience · `}
                 {seller.verifiedAt ? "Identité vérifiée par MonAuto" : "Identité en cours de vérification"}
               </p>
             </div>

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { formatPrice, listingInput, maskVin, sellerProfileInput } from "./listing.ts";
+import { formatPrice, listingInput, maskContacts, maskVin, matriculeOf, sellerProfileInput } from "./listing.ts";
 
 const valid = {
   category: "VOITURE",
@@ -45,10 +45,36 @@ test("masks a VIN and formats a price", () => {
   assert.equal(formatPrice(9800000), "9 800 000 FCFA");
 });
 
-test("validates a seller identity", () => {
-  const identity = { fullName: "Kouassi Awa Marie", yearsExperience: "7", matricule: "AG-2041", company: "Lagune Auto", position: "Conseillère commerciale" };
-  assert.equal(sellerProfileInput.parse(identity).yearsExperience, 7);
-  assert.equal(sellerProfileInput.safeParse({ ...identity, fullName: "A" }).success, false);
-  assert.equal(sellerProfileInput.safeParse({ ...identity, yearsExperience: "75" }).success, false);
-  assert.equal(sellerProfileInput.safeParse({ ...identity, matricule: " " }).success, false);
+test("validates a seller identity, where only the name is required", () => {
+  const out = sellerProfileInput.parse({ fullName: " Kouassi Awa Marie ", company: "", position: "", yearsExperience: "" });
+  assert.deepEqual(out, { fullName: "Kouassi Awa Marie", company: null, position: null, yearsExperience: null });
+  const pro = { fullName: "Koné Ibrahim", company: "Lagune Auto", position: "Vendeur", yearsExperience: "7" };
+  assert.equal(sellerProfileInput.parse(pro).yearsExperience, 7);
+  assert.equal(sellerProfileInput.safeParse({ ...pro, fullName: "A" }).success, false);
+  assert.equal(sellerProfileInput.safeParse({ ...pro, yearsExperience: "75" }).success, false);
+  assert.equal(sellerProfileInput.safeParse({ ...pro, yearsExperience: "sept" }).success, false);
+});
+
+test("builds a matricule that differs for companies and private persons", () => {
+  assert.equal(matriculeOf(42, "Lagune Auto"), "MA-E-000042");
+  assert.equal(matriculeOf(42, null), "MA-P-000042");
+  assert.equal(matriculeOf(1234567, ""), "MA-P-1234567");
+});
+
+test("masks phone numbers and e-mails but leaves prices, years and mileage alone", () => {
+  const m = "[numéro masqué]";
+  assert.equal(maskContacts("Appelez-moi au 07 08 09 10 11 ce soir"), `Appelez-moi au ${m} ce soir`);
+  assert.equal(maskContacts("0708091011"), m);
+  assert.equal(maskContacts("mon numéro: +225 07.08.09.10.11."), `mon numéro: ${m}.`);
+  assert.equal(maskContacts("00225-0508091011"), m);
+  assert.equal(maskContacts("WhatsApp +33 6 12 34 56 78"), `WhatsApp ${m}`);
+  assert.equal(maskContacts("écrivez à awa.k@exemple.ci svp"), "écrivez à [e-mail masqué] svp");
+  assert.equal(maskContacts("au 0708091011 ou a@b.com. Merci, b@c.ci, bye"), `au ${m} ou [e-mail masqué]. Merci, [e-mail masqué], bye`);
+  for (const safe of [
+    "Je propose 25 000 000 FCFA, dernier prix 9 800 000.",
+    "Modèle 2020, 148 000 km, visite samedi 10 h.",
+    "Rendez-vous le 05/12/2026 à 08 h 30.",
+  ]) {
+    assert.equal(maskContacts(safe), safe);
+  }
 });

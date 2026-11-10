@@ -72,21 +72,24 @@ Sortie : un utilisateur crée un compte, se connecte, voit une page d'accueil vi
 
 Fait, sans paiement en ligne :
 
-- **Identité du vendeur**, obligatoire pour déposer une annonce : nom et prénoms, entreprise, fonction, années d'expérience, matricule. Le public voit tout sauf le matricule, réservé à l'équipe. Ni téléphone ni e-mail ne sont affichés. Un administrateur valide l'identité ; toute modification la remet en vérification.
+- **Matricule MonAuto**, attribué automatiquement à chaque compte dès l'inscription : `MA-E-000123` pour un vendeur rattaché à une entreprise, `MA-P-000123` pour un particulier. Le numéro ne change jamais ; la lettre suit la présence d'une entreprise. Il n'apparaît pas sur les annonces.
+- **Identité du vendeur**, demandée avant le premier dépôt : nom et prénoms obligatoires ; entreprise, fonction et années d'expérience facultatives. Ni téléphone ni e-mail ne sont affichés. Un administrateur valide l'identité ; toute modification la remet en vérification.
 - **Dépôt d'annonce** avec 1 à 8 photos et contrôle de cohérence (année, kilométrage, prix, numéro de série).
 - **Modification d'une annonce** par son vendeur, photos comprises. Une annonce modifiée repasse par la validation.
 - Photos réencodées à l'envoi : la position GPS enregistrée par le téléphone est retirée.
 - Seule la commune est publique ; le numéro de série n'apparaît que masqué.
 - **Modération** : rien n'est en ligne avant la décision d'un administrateur ; un refus est motivé ; chaque décision est journalisée.
 - **Recherche** par marque ou modèle, catégorie, commune et budget.
-- **Messagerie interne** : acheteur et vendeur échangent sur le site, sans jamais voir les coordonnées de l'autre. Seuls les deux interlocuteurs lisent une conversation. L'e-mail de notification ne contient ni le message ni un contact.
+- **Messagerie interne** : acheteur et vendeur échangent sur le site, sans jamais voir les coordonnées de l'autre. Seuls les deux interlocuteurs lisent une conversation. Les numéros de téléphone et les e-mails écrits dans un message ou dans une description sont masqués. L'e-mail de notification ne contient ni le message ni un contact.
+- **Notifications par e-mail** : un compte créé par téléphone peut ajouter une adresse e-mail vérifiée par code.
 - **Alerte de prix** : mettre une annonce en favori, c'est suivre son prix. Une baisse est signalée dans les favoris, sur l'annonce et par e-mail.
 - **Comparaison** de deux à quatre favoris, côte à côte.
 - Signalement d'une annonce, retrait par le vendeur ou par un administrateur.
 
 Reste à faire :
 
-- Prévenir par SMS les comptes inscrits par téléphone (nouveau message, baisse de prix, décision de modération). L'e-mail part déjà.
+- Notifications par SMS pour les comptes sans e-mail : il faut un compte SMS chez LWS et ses identifiants.
+- Le masquage ne reconnaît pas un numéro écrit en toutes lettres.
 - Les réponses dans une conversation apparaissent au plus tard après 15 secondes, pas instantanément.
 
 Sortie : une annonce passe de la création à la publication modérée et reçoit une demande. Vérifié en local.
