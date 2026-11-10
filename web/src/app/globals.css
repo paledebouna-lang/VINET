@@ -1143,3 +1143,36 @@ hr {
   border-radius: 50%;
   background: rgba(36, 70, 232, 0.05);
 }
+
+/* Theft cases */
+.stolen {
+  padding: 16px;
+  border: 2px solid var(--warn-text);
+  border-radius: 12px;
+  background: var(--warn-bg);
+  color: var(--warn-text);
+}
+
+.stolen p {
+  margin: 0;
+}
+
+.stolen-title {
+  font: 700 20px var(--font-display);
+  margin-bottom: 6px !important;
+}
+
+.timeline {
+  margin: 0;
+  padding: 0 0 0 16px;
+  list-style: none;
+  border-left: 2px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.timeline li {
+  display: flex;
+  flex-direction: column;
+}

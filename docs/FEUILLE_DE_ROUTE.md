@@ -176,7 +176,7 @@ Fait, sans balise réelle :
 - **Vue du parc** : véhicules suivis, en location, retours en retard, alertes à voir, balises silencieuses.
 - **Durées de conservation** de la section 2 appliquées : positions supprimées après 90 jours, et 30 jours après la clôture pour celles enregistrées pendant une location.
 - **Journal** : chaque consultation des positions est journalisée, une fois par heure et par personne.
-- Ni l'équipe ni un locataire ne voient les positions ; l'accès de l'équipe viendra avec les dossiers de vol du lot 7.
+- Ni l'équipe ni un locataire ne voient les positions, sauf l'équipe pendant un dossier de vol confirmé (lot 7).
 
 Reste à faire :
 
@@ -190,10 +190,29 @@ Reste à faire :
 Sortie : un propriétaire suit un véhicule et reçoit une alerte de sortie de zone. Vérifié en local avec des positions simulées, hors location.
 
 ### Lot 7 — Security Center
-- Déclaration de vol vérifiée (propriété, documents, confirmation humaine).
-- Dossier, timeline, preuves, export aux autorités, clôture.
 
-Sortie : un dossier de vol est ouvert, instruit et clos avec une trace complète.
+Fait :
+
+- **Déclaration de vol** par le propriétaire, depuis le passeport : date et heure, lieu, circonstances, numéro de plainte et photo du récépissé (facultatifs), et quatre engagements cochés un à un (propriété, autorisation de transmettre aux autorités, conséquences d'une fausse déclaration, ne pas récupérer le véhicule soi-même). Un seul dossier ouvert par véhicule ; trois déclarations en attente au plus par compte.
+- **Confirmation humaine** : rien ne change en public tant qu'un membre de l'équipe n'a pas confirmé. La confirmation est refusée si la carte grise du passeport n'a pas été vérifiée. Un refus exige un motif, transmis au déclarant.
+- **À la confirmation** : la page de scan du QR affiche « Ce véhicule est déclaré volé » avec la consigne de ne confronter personne ; les annonces du véhicule sont retirées et ne peuvent pas être republiées ; le déclarant est prévenu par e-mail.
+- **Centre de sécurité** (`/admin/securite`) : déclarations à confirmer, recherches actives, derniers dossiers traités.
+- **Dossier** : déclaration, déclarant, véhicule et carte grise, location en cours éventuelle. Pendant la recherche seulement, l'équipe voit les positions GPS depuis la veille du vol, les signalements après scan avec leurs auteurs et les alertes, dans un tableau qui donne pour chaque ligne sa source et sa fiabilité, et sur la carte. Chaque consultation est journalisée. Chronologie complète, notes de travail réservées à l'équipe.
+- **Le propriétaire** suit son dossier, ajoute des informations et signale que le véhicule est retrouvé ; il ne voit pas les notes de l'équipe. Sa page de suivi GPS lui rappelle de ne pas se rendre sur place.
+- **Signalements pendant une recherche** : chaque nouveau signalement après scan prévient l'équipe par e-mail.
+- **Transmission aux autorités** : l'équipe indique le destinataire et la référence de sa demande, ce qui est journalisé, puis imprime le dossier ou l'enregistre en PDF. Il contient le véhicule, la déclaration, les engagements, les positions et les signalements, sans l'identité des personnes qui ont signalé (communiquée sur réquisition) ni les notes de travail.
+- **Clôture** avec son issue (retrouvé, non retrouvé, fausse déclaration) et un résumé transmis au propriétaire. Le véhicule n'est plus signalé volé et l'équipe n'a plus accès à ses positions.
+- **Journal** : déclaration, confirmation, refus, transmission et clôture.
+
+Reste à faire :
+
+- Faire valider par le juriste la formule des engagements, en particulier « consulter et transmettre aux autorités ».
+- Signature électronique ou cachet du dossier transmis : aujourd'hui une page imprimable, sans valeur de constat officiel.
+- Procédure avec les autorités (à qui transmettre, sous quelle forme) : à établir pendant le pilote (lot 9).
+- Alertes SMS à l'équipe : dépendent du compte SMS.
+- La fausse déclaration se sanctionne à la main en suspendant le compte.
+
+Sortie : un dossier de vol est ouvert, instruit et clos avec une trace complète. Vérifié en local de bout en bout (52 contrôles), avec des positions simulées.
 
 ### Lot 8 — Prototype VINET
 - Balise BLE à identifiant rotatif, détecteur partenaire, serveur d'événements, anti-abus.

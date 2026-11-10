@@ -42,6 +42,8 @@ model User {
   tickets             Ticket[]
   vehicles            Vehicle[]
   sightings           Sighting[]
+  theftCases          TheftCase[]
+  caseEvents          CaseEvent[]
   sessions            Session[]
   accounts            Account[]
   listings            Listing[]
@@ -338,6 +340,7 @@ enum DocumentKind {
   LICENCE
   INSPECTION
   REGISTRATION
+  THEFT
 }
 
 // Private images, never served publicly: see /documents/[id]. Files live in UPLOAD_DIR like photos.
@@ -352,12 +355,15 @@ model Document {
   inspection   Inspection?  @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
   vehicleId    String?
   vehicle      Vehicle?     @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  theftCaseId  String?
+  theftCase    TheftCase?   @relation(fields: [theftCaseId], references: [id], onDelete: Cascade)
   position     Int          @default(0)
 
   @@index([listingId])
   @@index([bookingId])
   @@index([inspectionId])
   @@index([vehicleId])
+  @@index([theftCaseId])
   @@map("document")
 }
 
@@ -382,22 +388,22 @@ model Ticket {
 // AVS Vehicle Passport: the digital identity of a vehicle. It does not replace
 // the registration papers, a title of ownership or an insurance certificate.
 model Vehicle {
-  id           String     @id @default(cuid())
+  id           String      @id @default(cuid())
   // Printed in the QR code. Random, so that a valid one cannot be guessed.
-  avsId        String     @unique
+  avsId        String      @unique
   ownerId      String
-  owner        User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner        User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   category     Category
   brand        String
   model        String
   year         Int
   color        String
   // VIN or frame number. Unique: a second passport for the same vehicle is a fraud signal.
-  serial       String     @unique
+  serial       String      @unique
   plate        String?
   // Set by an admin after checking the registration papers.
   verifiedAt   DateTime?
-  createdAt    DateTime   @default(now())
+  createdAt    DateTime    @default(now())
   listings     Listing[]
   // Authorised zone: a circle. Leaving it raises an alert.
   zoneLat      Float?
@@ -405,6 +411,7 @@ model Vehicle {
   zoneRadiusKm Float?
   tracker      Tracker?
   alerts       Alert[]
+  theftCases   TheftCase[]
   sightings    Sighting[]
   documents    Document[]
 
@@ -492,4 +499,72 @@ model Alert {
 
   @@index([vehicleId, acknowledgedAt])
   @@map("alert")
+}
+
+enum CaseStatus {
+  DECLARED
+  ACTIVE
+  CLOSED
+  REJECTED
+}
+
+enum CaseOutcome {
+  RECOVERED
+  NOT_RECOVERED
+  FALSE_DECLARATION
+}
+
+// A theft declared by a vehicle's owner. It changes nothing in public until a member of the
+// team has confirmed it (status ACTIVE): that human step is what stops malicious declarations.
+// The declarant and the author of an entry cannot be deleted while the case exists.
+model TheftCase {
+  id              String       @id @default(cuid())
+  // Shown as VOL-000012 in exchanges with the owner and the authorities.
+  number          Int          @unique @default(autoincrement())
+  vehicleId       String
+  vehicle         Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  declarantId     String
+  declarant       User         @relation(fields: [declarantId], references: [id])
+  status          CaseStatus   @default(DECLARED)
+  stolenAt        DateTime
+  place           String
+  circumstances   String
+  policeReference String?
+  // Filing time: also when the declarant accepted the undertakings shown on the form.
+  createdAt       DateTime     @default(now())
+  decidedAt       DateTime?
+  decidedById     String?
+  rejectionReason String?
+  closedAt        DateTime?
+  outcome         CaseOutcome?
+  closingNote     String?
+  events          CaseEvent[]
+  documents       Document[]
+
+  @@index([status])
+  @@index([vehicleId])
+  @@map("theft_case")
+}
+
+enum CaseEventKind {
+  NOTE
+  OWNER_NOTE
+  OWNER_FOUND
+  EXPORT
+}
+
+// What people add to a case: the team's working notes, the owner's further information,
+// and each transmission of the file to an authority (the text is then the recipient).
+model CaseEvent {
+  id          String        @id @default(cuid())
+  theftCaseId String
+  theftCase   TheftCase     @relation(fields: [theftCaseId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User          @relation(fields: [authorId], references: [id])
+  kind        CaseEventKind
+  text        String
+  createdAt   DateTime      @default(now())
+
+  @@index([theftCaseId, createdAt])
+  @@map("case_event")
 }

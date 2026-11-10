@@ -54,6 +54,9 @@ export function ago(from: Date, now = new Date()) {
   return `il y a ${Math.floor(s / 86_400)} j`;
 }
 
+/** Trackers that last reported before this moment count as silent. */
+export const liveSince = () => new Date(Date.now() - LIVE_WINDOW_MS);
+
 export const isLive = (lastSeenAt: Date | null, now = new Date()) =>
   lastSeenAt !== null && now.getTime() - lastSeenAt.getTime() <= LIVE_WINDOW_MS;
 

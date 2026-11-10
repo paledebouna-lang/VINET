@@ -206,6 +206,10 @@ export async function moderateListing(_prev: FormState, formData: FormData): Pro
   }
 
   const before = await prisma.listing.findUnique({ where: { id }, include: { seller: true } });
+  // A vehicle under an active theft search is never put on offer.
+  if (publish && before?.vehicleId && (await prisma.theftCase.count({ where: { vehicleId: before.vehicleId, status: "ACTIVE" } }))) {
+    return { errors: { reason: ["Ce véhicule est déclaré volé : l'annonce ne peut pas être publiée."] } };
+  }
   // The status filter makes a double click, or two admins, decide only once.
   const { count } = await prisma.listing.updateMany({
     where: { id, status: "PENDING" },

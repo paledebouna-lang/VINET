@@ -26,6 +26,7 @@ export default async function Suivi({ params }: PageProps<"/vehicules/[id]/suivi
       tracker: { include: { positions: { orderBy: { recordedAt: "desc" }, take: 100 } } },
       alerts: { orderBy: { createdAt: "desc" }, take: 20 },
       sightings: { where: { kind: "OBSERVATION", latitude: { not: null } }, orderBy: { createdAt: "desc" }, take: 10 },
+      theftCases: { where: { status: "ACTIVE" }, select: { id: true } },
     },
   });
   if (!vehicle) notFound();
@@ -65,6 +66,13 @@ export default async function Suivi({ params }: PageProps<"/vehicules/[id]/suivi
       <h1 className="page-title">
         Suivi : {vehicle.brand} {vehicle.model} {vehicle.year}
       </h1>
+
+      {vehicle.theftCases.length > 0 && (
+        <p className="alert">
+          Ce véhicule est déclaré volé. Ne vous rendez pas sur place et ne confrontez personne : l&apos;équipe MonAuto
+          transmet ces positions aux autorités. <Link href={`/vehicules/${id}/vol`}>Ouvrir le dossier</Link>
+        </p>
+      )}
 
       {vehicle.alerts.some((a) => !a.acknowledgedAt) && (
         <section className="stack" aria-label="Alertes">

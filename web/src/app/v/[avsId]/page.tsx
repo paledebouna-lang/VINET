@@ -17,7 +17,20 @@ export default async function Verification({ params }: PageProps<"/v/[avsId]">) 
   const vehicle = avsId
     ? await prisma.vehicle.findUnique({
         where: { avsId },
-        select: { avsId: true, ownerId: true, category: true, brand: true, model: true, year: true, color: true, serial: true, plate: true, verifiedAt: true },
+        select: {
+          avsId: true,
+          ownerId: true,
+          category: true,
+          brand: true,
+          model: true,
+          year: true,
+          color: true,
+          serial: true,
+          plate: true,
+          verifiedAt: true,
+          // Only the fact that a confirmed search is under way: nothing else of the case is public.
+          theftCases: { where: { status: "ACTIVE" }, select: { id: true } },
+        },
       })
     : null;
 
@@ -33,9 +46,20 @@ export default async function Verification({ params }: PageProps<"/v/[avsId]">) 
   }
 
   const user = await getUser();
+  const stolen = vehicle.theftCases.length > 0;
   return (
     <div className="section wrap medium">
       <h1 className="page-title">Vérification AVS</h1>
+      {stolen && (
+        <div className="stolen" role="alert">
+          <p className="stolen-title">Ce véhicule est déclaré volé</p>
+          <p>
+            Son propriétaire a déclaré le vol et MonAuto l&apos;a confirmé. Ne l&apos;achetez pas et ne le louez pas.
+            N&apos;intervenez pas et ne confrontez personne : éloignez-vous, puis signalez ci-dessous où vous
+            l&apos;avez vu, ou prévenez la police.
+          </p>
+        </div>
+      )}
       <section className="passport">
         <p className="passport-title">Identité AVS authentique</p>
         <p className="small">Cette étiquette a été délivrée par MonAuto pour le véhicule décrit ci-dessous.</p>

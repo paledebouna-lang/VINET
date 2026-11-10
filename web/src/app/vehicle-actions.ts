@@ -8,7 +8,9 @@ import { prisma } from "@/lib/db";
 import { maskContacts } from "@/lib/listing";
 import { notify, siteUrl } from "@/lib/mail";
 import { MAX_PHOTO_BYTES, deletePhotos, storePhotos } from "@/lib/photos";
+import { caseReference } from "@/lib/security";
 import { requireAdmin, requireUser } from "@/lib/session";
+import { notifyTeam } from "@/lib/team";
 import { newAvsId, parseAvsId, parsePosition, sightingInput, vehicleInput } from "@/lib/vehicle";
 
 const MAX_VEHICLES = 50;
@@ -121,6 +123,14 @@ export async function reportSighting(_prev: FormState, formData: FormData): Prom
       vehicle.owner.email,
       `Votre ${vehicle.brand} ${vehicle.model} a été observé`,
       `Quelqu'un a scanné son QR AVS et déclaré une observation : ${siteUrl}/vehicules/${vehicle.id}`,
+    );
+  }
+  // During a search, every report reaches the team at once, whatever its kind.
+  const active = await prisma.theftCase.findFirst({ where: { vehicleId: vehicle.id, status: "ACTIVE" } });
+  if (active) {
+    await notifyTeam(
+      `${caseReference(active.number)} : nouveau signalement après un scan`,
+      `${siteUrl}/admin/dossiers/${active.id}`,
     );
   }
   revalidatePath("/", "layout");

@@ -31,12 +31,14 @@ export default async function Passeport({ params }: PageProps<"/vehicules/[id]">
       },
       // Observations only: a suspicion may concern the owner, so it stays with the team.
       sightings: { where: { kind: "OBSERVATION" }, orderBy: { createdAt: "desc" }, take: 50 },
+      theftCases: { where: { status: { in: ["DECLARED", "ACTIVE"] } }, select: { id: true, status: true } },
     },
   });
   if (!vehicle) notFound();
 
   const checkUrl = `${siteUrl}/v/${vehicle.avsId}`;
   const qr = await QRCode.toDataURL(checkUrl, { margin: 1, width: 320, errorCorrectionLevel: "M" });
+  const openCase = vehicle.theftCases[0];
   const inspections = vehicle.listings.flatMap((l) => l.bookings.flatMap((b) => b.inspections));
 
   return (
@@ -111,6 +113,33 @@ export default async function Passeport({ params }: PageProps<"/vehicules/[id]">
           </Link>
         </section>
       )}
+
+      <section className="card stack no-print">
+        <h2 className="sub-title">Vol</h2>
+        {openCase ? (
+          <p className={openCase.status === "ACTIVE" ? "alert" : "muted"}>
+            {openCase.status === "ACTIVE"
+              ? "Ce véhicule est déclaré volé : une recherche est en cours."
+              : "Une déclaration de vol est en attente de confirmation par l'équipe MonAuto."}
+          </p>
+        ) : (
+          <p className="muted small">
+            En cas de vol, déclarez-le ici. Après vérification, MonAuto signale le véhicule sur sa page de
+            vérification et tient un dossier pour les autorités.
+          </p>
+        )}
+        {vehicle.ownerId === user.id ? (
+          <Link href={`/vehicules/${vehicle.id}/vol`} className="btn btn-ghost">
+            {openCase ? "Ouvrir le dossier de vol" : "Déclarer un vol"}
+          </Link>
+        ) : (
+          openCase && (
+            <Link href={`/admin/dossiers/${openCase.id}`} className="btn btn-ghost">
+              Ouvrir le dossier de vol
+            </Link>
+          )
+        )}
+      </section>
 
       <section className="card stack no-print">
         <h2 className="sub-title">Historique</h2>
