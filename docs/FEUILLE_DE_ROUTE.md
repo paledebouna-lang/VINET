@@ -21,26 +21,38 @@ Aucune durée n'est donnée : elles dépendent de l'équipe et des décisions de
 - **Nom commercial : MonAuto** (monauto.org). AVS reste le nom du système de sécurité, VINET celui du réseau de détection.
 - **Direction visuelle :** la maquette de base est validée (bleu nuit, cobalt, accent or).
 - **Mobile :** le site responsive est livré d'abord ; l'app Flutter suit une fois les parcours validés.
+- **Périmètre du MVP :** voitures, motos et utilitaires ; Abidjan ; en français.
+- **Paiement :** CinetPay.
+- **Juridique :** le juriste de l'équipe amende les propositions du document « MonAuto — Propositions juridiques à amender » (https://claude.ai/artifact/VDbtGF8WLV4THATohPo567).
 
-### Reste à décider avant le lot 1
+### Reste à décider
 
-1. **Périmètre du MVP.** Proposé : voitures, motos, utilitaires ; Abidjan ; français, anglais prêt mais non traduit.
-2. **Paiement.** Choix du ou des prestataires (mobile money, carte) et décision sur le séquestre.
-3. **Juridique.** Protection des données de localisation, contrat de location électronique, mentions de transfert de propriété. Avis local requis avant lancement.
-
-Sortie : décisions écrites, périmètre MVP figé.
+1. **Envoi des codes de connexion :** fournisseur de SMS et d'e-mails. Bloque toute mise en ligne.
+2. **Hébergement** du site et de la base de données. Bloque toute mise en ligne.
+3. **Séquestre** sur les ventes et détention des dépôts de garantie : dépend de l'avis du juriste. À trancher avant les lots 2 et 3.
 
 ## 3. Lots de réalisation
 
 ### Lot 1 — Fondations
-- Monolithe modulaire (NestJS, PostgreSQL/PostGIS), site Next.js, CI, environnements.
-- Comptes, authentification (téléphone + OTP, e-mail), MFA pour les comptes sensibles.
-- Rôles MVP : visiteur, acheteur/locataire, vendeur, agence, administrateur. Journal d'audit.
-- Modèle de données : utilisateur, organisation, véhicule, annonce, réservation, location, contrat, paiement, inspection.
-  Les tables passeport AVS et événement de position sont prévues dès le schéma, même vides.
-- Design system issu de la maquette validée.
 
-Sortie : un utilisateur crée un compte, se connecte, voit une page d'accueil vide mais réelle.
+Fait, dans `web/` :
+
+- Une seule application Next.js porte le site et son API, sur PostgreSQL. Un service séparé sera extrait quand l'ingestion GPS l'exigera (lot 6).
+- Comptes sans mot de passe : code à usage unique par téléphone (mobiles ivoiriens) ou par e-mail.
+- Profils : particulier, agence, administrateur ; un visiteur est simplement non connecté. Le profil ne peut pas être choisi par l'utilisateur.
+- Journal d'audit : création de compte et connexion.
+- Couleurs et typographies de la maquette validée ; page d'accueil, connexion, compte.
+- Intégration continue : lint, types, tests, compilation.
+
+Reste à faire avant la mise en ligne :
+
+- Brancher le fournisseur de SMS et d'e-mails (aujourd'hui les codes s'affichent dans le journal du serveur de développement).
+- Seconde vérification pour les comptes agence et administrateur.
+- Déploiement.
+
+Le modèle de données grandit lot par lot : chaque lot ajoute ses tables par migration, plutôt que de créer d'avance des tables vides.
+
+Sortie : un utilisateur crée un compte, se connecte, voit une page d'accueil vide mais réelle. Vérifié en local.
 
 ### Lot 2 — Vente
 - Création d'annonce avec photos, contrôle de cohérence, VIN à visibilité contrôlée, localisation approximative.
