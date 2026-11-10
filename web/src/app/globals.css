@@ -1061,3 +1061,85 @@ hr {
     padding: 0;
   }
 }
+
+/* Tracking map */
+.map {
+  height: min(60vh, 460px);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  /* Keeps Leaflet's layers under the page's own overlays. */
+  isolation: isolate;
+}
+
+.map-marker {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  border-radius: 50%;
+}
+
+/* Live: a full disc. Last known: a ring. Observation: a diamond. Shape, not colour alone, tells them apart. */
+.map-marker-live {
+  background: #0e9f6e;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 5px rgba(14, 159, 110, 0.3);
+}
+
+.map-marker-last {
+  background: #fff;
+  border: 5px solid #b45309;
+}
+
+/* Leaflet places markers with its own inline transform, so the diamond is drawn by a pseudo-element. */
+.map-marker-observation {
+  position: relative;
+  border-radius: 0;
+}
+
+.map-marker-observation::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  background: #1b3bc4;
+  border: 2px solid #fff;
+  transform: rotate(45deg);
+}
+
+.map-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  font-size: 14px;
+}
+
+.map-legend li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.alert.row {
+  align-items: center;
+}
+
+.legend-path {
+  display: inline-block;
+  width: 22px;
+  height: 3px;
+  background: #56607f;
+  opacity: 0.7;
+}
+
+.legend-zone {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  border: 2px dashed #2446e8;
+  border-radius: 50%;
+  background: rgba(36, 70, 232, 0.05);
+}

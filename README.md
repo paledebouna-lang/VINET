@@ -36,6 +36,20 @@ node --env-file=.env scripts/set-role.mjs +2250708091011 admin
 
 La modération se trouve ensuite sur `/admin`.
 
+## Balises GPS
+
+Une balise déclarée sur le passeport d'un véhicule reçoit une clé, affichée une seule fois. La balise, ou la passerelle qui traduit son protocole, envoie ses positions ainsi :
+
+```http
+POST /api/trackers/positions
+Authorization: Bearer <clé de la balise>
+Content-Type: application/json
+
+{"positions": [{"time": "2026-11-10T12:00:00Z", "lat": 5.3237, "lng": -4.0167, "accuracy": 8, "speed": 42, "powerCut": false}]}
+```
+
+`time` est l'heure de la mesure (ISO 8601), `accuracy` en mètres, `speed` en km/h ; ces trois derniers champs sont facultatifs. Jusqu'à 500 positions par envoi. Une position déjà reçue est ignorée. Réponses : 200 avec le nombre de positions enregistrées, 400 si le contenu est invalide, 401 si la clé est inconnue.
+
 ## Vérifications
 
 ```bash

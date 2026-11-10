@@ -382,25 +382,31 @@ model Ticket {
 // AVS Vehicle Passport: the digital identity of a vehicle. It does not replace
 // the registration papers, a title of ownership or an insurance certificate.
 model Vehicle {
-  id         String     @id @default(cuid())
+  id           String     @id @default(cuid())
   // Printed in the QR code. Random, so that a valid one cannot be guessed.
-  avsId      String     @unique
-  ownerId    String
-  owner      User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  category   Category
-  brand      String
-  model      String
-  year       Int
-  color      String
+  avsId        String     @unique
+  ownerId      String
+  owner        User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  category     Category
+  brand        String
+  model        String
+  year         Int
+  color        String
   // VIN or frame number. Unique: a second passport for the same vehicle is a fraud signal.
-  serial     String     @unique
-  plate      String?
+  serial       String     @unique
+  plate        String?
   // Set by an admin after checking the registration papers.
-  verifiedAt DateTime?
-  createdAt  DateTime   @default(now())
-  listings   Listing[]
-  sightings  Sighting[]
-  documents  Document[]
+  verifiedAt   DateTime?
+  createdAt    DateTime   @default(now())
+  listings     Listing[]
+  // Authorised zone: a circle. Leaving it raises an alert.
+  zoneLat      Float?
+  zoneLng      Float?
+  zoneRadiusKm Float?
+  tracker      Tracker?
+  alerts       Alert[]
+  sightings    Sighting[]
+  documents    Document[]
 
   @@index([ownerId])
   @@map("vehicle")
@@ -430,4 +436,60 @@ model Sighting {
   @@index([vehicleId, createdAt])
   @@index([reporterId, createdAt])
   @@map("sighting")
+}
+
+// A GPS tracker fitted to a vehicle. It reports through POST /api/trackers/positions with its key.
+model Tracker {
+  id         String     @id @default(cuid())
+  vehicleId  String     @unique
+  vehicle    Vehicle    @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  model      String
+  serial     String     @unique
+  // SHA-256 of the device key. The key itself is shown once, at creation, and never stored.
+  keyHash    String     @unique
+  createdAt  DateTime   @default(now())
+  lastSeenAt DateTime?
+  // Last time old positions were deleted for this tracker (see retention in the ingestion route).
+  purgedAt   DateTime?
+  positions  Position[]
+
+  @@map("tracker")
+}
+
+// A position computed by a tracker. recordedAt is the device's clock; receivedAt is ours,
+// and differs when the device stored positions while out of coverage.
+model Position {
+  id         String   @id @default(cuid())
+  trackerId  String
+  tracker    Tracker  @relation(fields: [trackerId], references: [id], onDelete: Cascade)
+  recordedAt DateTime
+  receivedAt DateTime @default(now())
+  latitude   Float
+  longitude  Float
+  accuracyM  Int?
+  speedKmh   Int?
+  powerCut   Boolean  @default(false)
+
+  // A position sent twice is stored once.
+  @@unique([trackerId, recordedAt])
+  @@map("position")
+}
+
+enum AlertKind {
+  ZONE_EXIT
+  POWER_CUT
+}
+
+model Alert {
+  id             String    @id @default(cuid())
+  vehicleId      String
+  vehicle        Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  kind           AlertKind
+  latitude       Float
+  longitude      Float
+  createdAt      DateTime  @default(now())
+  acknowledgedAt DateTime?
+
+  @@index([vehicleId, acknowledgedAt])
+  @@map("alert")
 }

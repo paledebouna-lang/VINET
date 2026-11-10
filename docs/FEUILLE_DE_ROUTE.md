@@ -166,11 +166,28 @@ Reste à faire :
 Sortie : un scan affiche l'identité vérifiée et permet un signalement qualifié comme tel. Vérifié en local, sans lecture du QR par un vrai téléphone.
 
 ### Lot 6 — AVS Locate (GPS)
-- Intégration d'un ou deux trackers commerciaux, enregistrement des balises, ingestion des positions.
-- Carte, historique, zones autorisées, alertes (sortie de zone, retard, débranchement, hors ligne).
-- Espace agence/flotte ; suivi limité à la durée du contrat.
 
-Sortie : une agence suit un véhicule loué et reçoit une alerte de sortie de zone.
+Fait, sans balise réelle :
+
+- **Déclaration de la balise** sur le passeport du véhicule : marque, modèle, numéro de série ou IMEI. Le site délivre une clé propre à la balise, affichée une seule fois et conservée sous forme d'empreinte. La remplacer rend l'ancienne inutilisable.
+- **Réception des positions** : la balise, ou la passerelle qui traduit son protocole, envoie ses positions par lots de 500 au plus, pour transmettre ce qu'elle a stocké hors couverture. Une position reçue deux fois est enregistrée une fois ; une position datée dans le futur ou de plus de 90 jours est écartée. Le format est décrit dans le README.
+- **Carte et historique**, pour le propriétaire seul. « En direct » si la balise a transmis dans les deux dernières minutes, sinon « dernière position » avec son heure et un avertissement. Source, heure, précision et vitesse sont affichées. Les observations QR du lot 5 figurent sur la même carte, chacune avec sa forme et son libellé.
+- **Zone autorisée** (un cercle) et **alertes** : sortie de zone, coupure d'alimentation de la balise. Une alerte n'est levée qu'au changement, pas à chaque position. Le propriétaire est prévenu par e-mail ; pendant une location rattachée au passeport, le locataire l'est aussi pour une sortie de zone.
+- **Vue du parc** : véhicules suivis, en location, retours en retard, alertes à voir, balises silencieuses.
+- **Durées de conservation** de la section 2 appliquées : positions supprimées après 90 jours, et 30 jours après la clôture pour celles enregistrées pendant une location.
+- **Journal** : chaque consultation des positions est journalisée, une fois par heure et par personne.
+- Ni l'équipe ni un locataire ne voient les positions ; l'accès de l'équipe viendra avec les dossiers de vol du lot 7.
+
+Reste à faire :
+
+- **Raccorder une balise réelle** : choisir le modèle, puis écrire la passerelle entre son protocole et l'adresse de réception. Il faut le modèle et sa documentation.
+- **Relier l'annonce de location à la balise suivie** : le GPS déclaré sur l'annonce (lot 3) et la balise suivie sur le passeport sont deux déclarations séparées.
+- **Fournisseur de fonds de carte** : ils viennent d'OpenStreetMap, dont les règles interdisent un trafic important et qui reçoit la zone consultée. À remplacer par un fournisseur sous contrat avant l'ouverture.
+- Limite de débit par balise sur l'adresse de réception.
+- La purge des anciennes positions se fait quand la balise transmet ; une tâche planifiée est à mettre en place au déploiement.
+- Alertes de remorquage, de vitesse et d'immobilisation : dépendent des capacités de la balise. Alertes par SMS : dépendent du compte SMS.
+
+Sortie : un propriétaire suit un véhicule et reçoit une alerte de sortie de zone. Vérifié en local avec des positions simulées, hors location.
 
 ### Lot 7 — Security Center
 - Déclaration de vol vérifiée (propriété, documents, confirmation humaine).

@@ -57,6 +57,9 @@ export default async function Compte() {
         <Link href="/messages" className="btn btn-ghost">
           Messages
         </Link>
+        <Link href="/suivi" className="btn btn-ghost">
+          Suivi GPS de mon parc
+        </Link>
         <Link href="/vehicules" className="btn btn-ghost">
           Mes véhicules et passeports AVS
         </Link>

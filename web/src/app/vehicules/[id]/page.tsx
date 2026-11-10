@@ -99,6 +99,19 @@ export default async function Passeport({ params }: PageProps<"/vehicules/[id]">
         </p>
       </section>
 
+      {vehicle.ownerId === user.id && (
+        <section className="card stack no-print">
+          <h2 className="sub-title">Suivi GPS</h2>
+          <p className="muted small">
+            Avec une balise GPS, suivez ce véhicule sur la carte et recevez une alerte s&apos;il sort de la zone que
+            vous autorisez.
+          </p>
+          <Link href={`/vehicules/${vehicle.id}/suivi`} className="btn btn-ghost">
+            Ouvrir le suivi et la balise
+          </Link>
+        </section>
+      )}
+
       <section className="card stack no-print">
         <h2 className="sub-title">Historique</h2>
         <h3 className="sub-title">Annonces</h3>
