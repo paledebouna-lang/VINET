@@ -1,4 +1,4 @@
-# Feuille de route — Marketplace de mobilité (AVS · VINET)
+# Feuille de route — MonAuto (AVS · VINET)
 
 Synthèse hiérarchisée du cahier des charges consolidé. Ordre de travail, périmètre de chaque lot et critère de sortie.
 Aucune durée n'est donnée : elles dépendent de l'équipe et des décisions de la phase 0.
@@ -14,16 +14,19 @@ Aucune durée n'est donnée : elles dépendent de l'équipe et des décisions de
 | 5 | VINET (Bluetooth collaboratif) | Dépend du matériel et d'une densité de partenaires ; prototype d'abord. |
 | 6 | Écosystème (enchères, finance, assurance, pièces, IA, bateaux, avions) | Chaque module demande un partenaire ou un cadre légal spécifique. |
 
-## 2. Décisions à prendre avant de coder (phase 0)
+## 2. Cadrage (phase 0)
 
-Ces points bloquent le lot 1 ou changent son contenu.
+### Décidé
 
-1. **Nom commercial.** Le cahier garde AVS (sécurité) et VINET (réseau de détection) et laisse le nom de la marketplace ouvert. Les maquettes utilisent « VINET » comme nom de travail.
-2. **Périmètre du MVP.** Proposé : voitures, motos, utilitaires ; Abidjan ; français, anglais prêt mais non traduit.
-3. **Paiement.** Choix du ou des prestataires (mobile money, carte) et décision sur le séquestre.
-4. **Juridique.** Protection des données de localisation, contrat de location électronique, mentions de transfert de propriété. Avis local requis avant lancement.
-5. **Direction visuelle.** Valider la maquette de base ou demander une variante.
-6. **Mobile.** Recommandation : livrer le site responsive d'abord, puis l'app Flutter une fois les parcours validés. Une seule base à faire évoluer pendant le MVP.
+- **Nom commercial : MonAuto** (monauto.org). AVS reste le nom du système de sécurité, VINET celui du réseau de détection.
+- **Direction visuelle :** la maquette de base est validée (bleu nuit, cobalt, accent or).
+- **Mobile :** le site responsive est livré d'abord ; l'app Flutter suit une fois les parcours validés.
+
+### Reste à décider avant le lot 1
+
+1. **Périmètre du MVP.** Proposé : voitures, motos, utilitaires ; Abidjan ; français, anglais prêt mais non traduit.
+2. **Paiement.** Choix du ou des prestataires (mobile money, carte) et décision sur le séquestre.
+3. **Juridique.** Protection des données de localisation, contrat de location électronique, mentions de transfert de propriété. Avis local requis avant lancement.
 
 Sortie : décisions écrites, périmètre MVP figé.
 
