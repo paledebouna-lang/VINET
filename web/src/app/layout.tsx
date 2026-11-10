@@ -25,9 +25,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               </span>
               MonAuto
             </Link>
-            <Link href="/compte" className="btn btn-outline">
-              Mon compte
-            </Link>
+            <nav aria-label="Navigation principale" className="site-nav">
+              <Link href="/annonces">Acheter</Link>
+              <Link href="/vendre">Vendre</Link>
+              <Link href="/favoris">Favoris</Link>
+              <Link href="/compte" className="btn btn-outline">
+                Mon compte
+              </Link>
+            </nav>
           </div>
         </header>
         <main>{children}</main>

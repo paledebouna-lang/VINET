@@ -25,7 +25,8 @@ Aucune durée n'est donnée : elles dépendent de l'équipe et des décisions de
 - **Paiement :** CinetPay.
 - **Juridique :** le juriste de l'équipe amende les propositions du document « MonAuto — Propositions juridiques à amender » (https://claude.ai/artifact/VDbtGF8WLV4THATohPo567).
 
-- **Hébergement, nom de domaine et e-mails :** LWS (lws.fr), en France.
+- **Hébergement, nom de domaine et e-mails :** LWS (lws.fr), en France, sur un VPS déjà utilisé par d'autres sites.
+- **Ventes sans paiement en ligne :** mise en relation seulement ; le paiement arrive avec la location au lot 3.
 - **Réponses juridiques du 10 novembre 2026** (détail dans la section 8 du document) :
   - MonAuto est un intermédiaire ; le contrat lie le loueur et le locataire.
   - Tout véhicule mis en location est équipé d'un GPS par son propriétaire.
@@ -36,9 +37,8 @@ Aucune durée n'est donnée : elles dépendent de l'équipe et des décisions de
 
 ### Reste à décider
 
-1. **Formule LWS.** Le site a besoin de Node.js et de PostgreSQL : une formule cPanel qui offre les deux, ou un VPS. Bloque la mise en ligne.
+1. **Préparation du VPS.** Le site sera installé sur le VPS LWS existant, à côté des autres sites, comme un service séparé. Il faut connaître son système, son serveur web, son éventuel panneau de gestion et sa mémoire libre. Bloque la mise en ligne.
 2. **SMS pour les codes de connexion.** LWS vend des SMS par API, à crédits ; la couverture et le prix pour la Côte d'Ivoire sont à confirmer. Bloque la connexion par téléphone en production.
-3. **Paiement en ligne des ventes.** Proposition : le lot 2 se fait sans paiement en ligne (mise en relation, visite) ; le paiement arrive avec la location au lot 3.
 
 ### À faire confirmer par écrit par le juriste
 
@@ -69,11 +69,25 @@ Le modèle de données grandit lot par lot : chaque lot ajoute ses tables par mi
 Sortie : un utilisateur crée un compte, se connecte, voit une page d'accueil vide mais réelle. Vérifié en local.
 
 ### Lot 2 — Vente
-- Création d'annonce avec photos, contrôle de cohérence, VIN à visibilité contrôlée, localisation approximative.
-- Recherche, filtres, favoris, contact sécurisé, signalement d'annonce.
-- Vérification du vendeur, file de modération.
 
-Sortie : une annonce passe de la création à la publication modérée et reçoit une demande.
+Fait, sans paiement en ligne :
+
+- Dépôt d'annonce avec 1 à 8 photos et contrôle de cohérence (année, kilométrage, prix, numéro de série).
+- Photos réencodées à l'envoi : la position GPS enregistrée par le téléphone est retirée.
+- Seule la commune est publique ; le numéro de série n'apparaît que masqué.
+- Modération : rien n'est en ligne avant la décision d'un administrateur ; un refus est motivé ; chaque décision est journalisée.
+- Recherche par marque ou modèle, catégorie, commune et budget.
+- Demande de contact : le vendeur reçoit le message et le contact de l'acheteur ; aucun numéro n'est public.
+- Favoris, signalement d'une annonce, retrait par le vendeur ou par un administrateur.
+
+Reste à faire :
+
+- Vérification d'identité du vendeur sur pièce. Aujourd'hui seul son numéro de téléphone est vérifié.
+- Modification d'une annonce déposée (le vendeur la retire et la redépose).
+- Prévenir par SMS le vendeur inscrit par téléphone ; l'e-mail part déjà.
+- Alertes de prix et comparaison d'annonces.
+
+Sortie : une annonce passe de la création à la publication modérée et reçoit une demande. Vérifié en local.
 
 ### Lot 3 — Location basique
 - Mise en location refusée sans GPS déclaré par le propriétaire et sans attestation d'assurance.

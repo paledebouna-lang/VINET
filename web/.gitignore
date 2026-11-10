@@ -47,3 +47,6 @@ next-env.d.ts
 
 # keep the template
 !.env.example
+
+# uploaded listing photos
+/uploads

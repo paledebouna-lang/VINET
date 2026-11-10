@@ -17,6 +17,7 @@ model AuditLog {
   at      DateTime @default(now())
   action  String
   actorId String?
+  target  String?
   ip      String?
 
   @@index([actorId, at])
@@ -36,6 +37,10 @@ model User {
   role                String    @default("particulier")
   sessions            Session[]
   accounts            Account[]
+  listings            Listing[]
+  inquiries           Inquiry[]
+  favorites           Favorite[]
+  reports             Report[]
 
   @@unique([email])
   @@unique([phoneNumber])
@@ -98,4 +103,97 @@ model RateLimit {
 
   @@unique([key])
   @@map("rateLimit")
+}
+
+enum ListingStatus {
+  PENDING
+  PUBLISHED
+  REJECTED
+  ARCHIVED
+}
+
+enum Category {
+  VOITURE
+  MOTO
+  UTILITAIRE
+}
+
+model Listing {
+  id              String         @id @default(cuid())
+  sellerId        String
+  seller          User           @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  status          ListingStatus  @default(PENDING)
+  category        Category
+  brand           String
+  model           String
+  year            Int
+  mileageKm       Int
+  fuel            String
+  transmission    String
+  priceFcfa       Int
+  commune         String
+  description     String
+  // Never shown in full to the public: see maskVin.
+  vin             String?
+  rejectionReason String?
+  createdAt       DateTime       @default(now())
+  publishedAt     DateTime?
+  photos          ListingPhoto[]
+  inquiries       Inquiry[]
+  favorites       Favorite[]
+  reports         Report[]
+
+  @@index([status, publishedAt])
+  @@index([sellerId])
+  @@map("listing")
+}
+
+// The files live in UPLOAD_DIR as <id>.webp and <id>-s.webp.
+model ListingPhoto {
+  id        String  @id @default(cuid())
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  position  Int
+
+  @@index([listingId, position])
+  @@map("listing_photo")
+}
+
+model Inquiry {
+  id        String   @id @default(cuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyerId   String
+  buyer     User     @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  message   String
+  createdAt DateTime @default(now())
+
+  // One request per buyer and listing: a second one replaces the first.
+  @@unique([listingId, buyerId])
+  @@map("inquiry")
+}
+
+model Favorite {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, listingId])
+  @@map("favorite")
+}
+
+model Report {
+  id         String    @id @default(cuid())
+  listingId  String
+  listing    Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter   User      @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  reason     String
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  @@unique([listingId, reporterId])
+  @@map("report")
 }

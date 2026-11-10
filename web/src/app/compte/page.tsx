@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { SignOutButton } from "./sign-out-button";
@@ -38,6 +39,14 @@ export default async function Compte() {
             <dd>{roleLabels[user.role] ?? user.role}</dd>
           </div>
         </dl>
+        <Link href="/mes-annonces" className="btn btn-ghost">
+          Mes annonces et demandes reçues
+        </Link>
+        {user.role === "admin" && (
+          <Link href="/admin" className="btn btn-ghost">
+            Modération
+          </Link>
+        )}
         <SignOutButton />
       </div>
     </div>

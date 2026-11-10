@@ -24,6 +24,18 @@ npm run dev
 
 En développement, les codes de connexion s'affichent dans le terminal du serveur. Les codes par e-mail partent réellement dès que `SMTP_URL` est renseigné.
 
+Les photos des annonces sont enregistrées dans `web/uploads`, ou dans le dossier indiqué par `UPLOAD_DIR`.
+
+## Donner le rôle d'administrateur
+
+La personne se connecte une première fois sur le site, puis :
+
+```bash
+node --env-file=.env scripts/set-role.mjs +2250708091011 admin
+```
+
+La modération se trouve ensuite sur `/admin`.
+
 ## Vérifications
 
 ```bash
