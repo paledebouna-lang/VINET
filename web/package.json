@@ -18,12 +18,14 @@
     "@prisma/client": "^7.10.1",
     "better-auth": "^1.7.19",
     "next": "16.4.6",
+    "nodemailer": "^10.5.0",
     "pg": "^8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.2",
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",

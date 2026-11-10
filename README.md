@@ -22,7 +22,7 @@ npx prisma migrate deploy
 npm run dev
 ```
 
-En développement, les codes de connexion ne sont pas envoyés : ils s'affichent dans le terminal du serveur.
+En développement, les codes de connexion s'affichent dans le terminal du serveur. Les codes par e-mail partent réellement dès que `SMTP_URL` est renseigné.
 
 ## Vérifications
 

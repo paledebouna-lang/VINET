@@ -25,11 +25,25 @@ Aucune durée n'est donnée : elles dépendent de l'équipe et des décisions de
 - **Paiement :** CinetPay.
 - **Juridique :** le juriste de l'équipe amende les propositions du document « MonAuto — Propositions juridiques à amender » (https://claude.ai/artifact/VDbtGF8WLV4THATohPo567).
 
+- **Hébergement, nom de domaine et e-mails :** LWS (lws.fr), en France.
+- **Réponses juridiques du 10 novembre 2026** (détail dans la section 8 du document) :
+  - MonAuto est un intermédiaire ; le contrat lie le loueur et le locataire.
+  - Tout véhicule mis en location est équipé d'un GPS par son propriétaire.
+  - Le propriétaire fournit une attestation d'assurance pour louer entre particuliers.
+  - Le droit d'annulation du consommateur s'applique aux réservations en ligne.
+  - Les durées de conservation des positions sont retenues telles que proposées.
+  - L'hébergement hors de Côte d'Ivoire et la transmission aux autorités sont permis.
+
 ### Reste à décider
 
-1. **Envoi des codes de connexion :** fournisseur de SMS et d'e-mails. Bloque toute mise en ligne.
-2. **Hébergement** du site et de la base de données. Bloque toute mise en ligne.
-3. **Séquestre** sur les ventes et détention des dépôts de garantie : dépend de l'avis du juriste. À trancher avant les lots 2 et 3.
+1. **Formule LWS.** Le site a besoin de Node.js et de PostgreSQL : une formule cPanel qui offre les deux, ou un VPS. Bloque la mise en ligne.
+2. **SMS pour les codes de connexion.** LWS vend des SMS par API, à crédits ; la couverture et le prix pour la Côte d'Ivoire sont à confirmer. Bloque la connexion par téléphone en production.
+3. **Paiement en ligne des ventes.** Proposition : le lot 2 se fait sans paiement en ligne (mise en relation, visite) ; le paiement arrive avec la location au lot 3.
+
+### À faire confirmer par écrit par le juriste
+
+- L'absence de formalité auprès de l'ARTCI pour la géolocalisation.
+- L'absence d'agrément pour détenir un séquestre ou un dépôt de garantie. D'ici là, les fonds restent chez CinetPay.
 
 ## 3. Lots de réalisation
 
@@ -46,7 +60,7 @@ Fait, dans `web/` :
 
 Reste à faire avant la mise en ligne :
 
-- Brancher le fournisseur de SMS et d'e-mails (aujourd'hui les codes s'affichent dans le journal du serveur de développement).
+- Brancher l'envoi des SMS (aujourd'hui les codes SMS s'affichent dans le journal du serveur de développement). L'e-mail part déjà par SMTP dès que la boîte LWS est renseignée.
 - Seconde vérification pour les comptes agence et administrateur.
 - Déploiement.
 
@@ -62,7 +76,8 @@ Sortie : un utilisateur crée un compte, se connecte, voit une page d'accueil vi
 Sortie : une annonce passe de la création à la publication modérée et reçoit une demande.
 
 ### Lot 3 — Location basique
-- Calendrier, tarifs, réservation, dépôt de garantie, paiement.
+- Mise en location refusée sans GPS déclaré par le propriétaire et sans attestation d'assurance.
+- Calendrier, tarifs, réservation, annulation selon le droit du consommateur, dépôt de garantie, paiement par CinetPay.
 - Contrat électronique et consentement au suivi affiché avant signature.
 - AVS Rental Check : inspection photo au départ et au retour, kilométrage, carburant, clôture.
 
