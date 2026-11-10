@@ -141,11 +141,29 @@ Reste à faire :
 Sortie : **MVP marketplace**. Les fonctions sont là et vérifiées en local ; la mise en ligne attend le VPS, les SMS, CinetPay et la double vérification.
 
 ### Lot 5 — Passeport AVS et QR
-- Identifiant AVS, QR signé côté serveur, page publique de vérification à statut limité.
-- Signalement et observation depuis un scan, position du déclarant uniquement avec accord.
-- Inspections rattachées au passeport.
 
-Sortie : un scan affiche l'identité vérifiée et permet un signalement qualifié comme tel.
+Fait :
+
+- **Passeport AVS** : le propriétaire enregistre son véhicule (catégorie, marque, modèle, année, couleur, numéro de série, immatriculation) avec une photo de la carte grise. Le véhicule reçoit un identifiant AVS aléatoire, par exemple `AVS-CI-UKZB-EB6M-BH25`. Un même numéro de série ne peut pas avoir deux passeports.
+- **Vérification** : un administrateur compare la carte grise et valide le passeport. La carte grise n'est vue que du propriétaire et de l'équipe.
+- **Étiquette QR** à imprimer depuis la page du passeport ; l'impression ne sort que l'étiquette.
+- **Page publique de vérification**, ouverte par le scan : description du véhicule, numéro de série et immatriculation masqués au milieu, propriété vérifiée ou non. Rien sur le propriétaire ni sur la position. Un identifiant que MonAuto n'a pas délivré est rejeté. La page n'est pas indexée par les moteurs de recherche.
+- **Signalement après un scan**, réservé aux membres connectés : observation (« j'ai vu ce véhicule ici ») ou soupçon. La position du téléphone n'est jointe que si le déclarant coche la case, et elle est toujours présentée comme la position du déclarant, jamais comme celle du véhicule.
+- Le propriétaire voit les observations sans l'identité du déclarant et en est prévenu par e-mail. Un soupçon ne va qu'à l'équipe, car il peut viser le propriétaire.
+- **Annonce rattachée à un passeport** : elle affiche l'identifiant AVS et un lien de vérification. Le passeport garde l'historique des annonces et des états des lieux de location.
+
+À savoir avant d'imprimer une étiquette : le QR contient l'adresse du site. Les étiquettes ne doivent être imprimées qu'une fois le site en ligne à son adresse définitive.
+
+Écart avec le cahier des charges : le QR n'est pas « signé » par un calcul cryptographique. L'identifiant est tiré au hasard et enregistré côté serveur, ce qui donne la même garantie (un identifiant inconnu est rejeté) sans clé secrète dont la perte invaliderait toutes les étiquettes déjà collées.
+
+Reste à faire :
+
+- Statut « volé » ou « recherché » sur la page publique : il arrive avec la déclaration de vol vérifiée du lot 7.
+- Une étiquette copiée sur un autre véhicule affiche la description du véhicule d'origine : c'est au lecteur de comparer. Étiquettes inviolables et second QR caché restent à étudier.
+- Réparations déclarées et documents joints au passeport.
+- Signalement sans compte.
+
+Sortie : un scan affiche l'identité vérifiée et permet un signalement qualifié comme tel. Vérifié en local, sans lecture du QR par un vrai téléphone.
 
 ### Lot 6 — AVS Locate (GPS)
 - Intégration d'un ou deux trackers commerciaux, enregistrement des balises, ingestion des positions.

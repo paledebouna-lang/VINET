@@ -8,7 +8,9 @@ import { CATEGORIES, COMMUNES, FUELS, KINDS, TRANSMISSIONS } from "@/lib/listing
 type Existing = { id: string; values: Record<string, string>; photoIds: string[]; hasInsurance: boolean };
 
 /** Creates a listing, or edits `existing` when given. */
-export function ListingForm({ existing }: { existing?: Existing }) {
+type Passport = { id: string; label: string };
+
+export function ListingForm({ existing, passports }: { existing?: Existing; passports: Passport[] }) {
   const [state, action, pending] = useActionState<FormState, FormData>(
     existing ? updateListing : createListing,
     {},
@@ -67,6 +69,20 @@ export function ListingForm({ existing }: { existing?: Existing }) {
           ))}
         </select>
       </div>
+      {passports.length > 0 && (
+        <div className="field">
+          <label htmlFor="vehicleId">Passeport AVS de ce véhicule (facultatif)</label>
+          <select key={v.vehicleId ?? ""} id="vehicleId" name="vehicleId" defaultValue={v.vehicleId ?? ""}>
+            <option value="">Aucun</option>
+            {passports.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+          <small>L&apos;annonce affichera l&apos;identifiant AVS du véhicule et un lien pour le vérifier.</small>
+        </div>
+      )}
       <div className="form-grid">
         {select("category", "Catégorie", Object.entries(CATEGORIES))}
         {input("brand", "Marque", { placeholder: "Toyota" })}

@@ -13,18 +13,21 @@ export default async function Modifier({ params }: PageProps<"/annonces/[id]/mod
     include: { photos: { orderBy: { position: "asc" } }, documents: { where: { kind: "INSURANCE" } } },
   });
   if (!listing) notFound();
+  const vehicles = await prisma.vehicle.findMany({ where: { ownerId: user.id }, orderBy: { createdAt: "desc" } });
 
   const { category, brand, model, year, mileageKm, fuel, transmission, priceFcfa, commune, description, vin } = listing;
   return (
     <div className="section wrap medium">
       <h1 className="page-title">Modifier mon annonce</h1>
       <ListingForm
+        passports={vehicles.map((v) => ({ id: v.id, label: `${v.brand} ${v.model} ${v.year} · ${v.avsId}` }))}
         existing={{
           id,
           photoIds: listing.photos.map((p) => p.id),
           hasInsurance: listing.documents.length > 0,
           values: {
             kind: listing.kind,
+            vehicleId: listing.vehicleId ?? "",
             depositFcfa: listing.depositFcfa?.toString() ?? "",
             kmPerDay: listing.kmPerDay?.toString() ?? "",
             zone: listing.zone ?? "",

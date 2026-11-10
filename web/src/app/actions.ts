@@ -48,6 +48,13 @@ export async function saveSellerProfile(_prev: FormState, formData: FormData): P
   return { ok: true, values };
 }
 
+/** The passport chosen in the form, if it really is one of this seller's vehicles. */
+async function ownVehicleId(vehicleId: string | undefined, userId: string) {
+  if (!vehicleId) return null;
+  const vehicle = await prisma.vehicle.findFirst({ where: { id: vehicleId, ownerId: userId }, select: { id: true } });
+  return vehicle?.id ?? null;
+}
+
 const noRental = { depositFcfa: null, kmPerDay: null, zone: null, gpsModel: null, gpsSerial: null };
 
 /** Reads and validates the listing form shared by creation and edition. */
@@ -110,6 +117,7 @@ export async function createListing(_prev: FormState, formData: FormData): Promi
     await prisma.listing.create({
       data: {
         ...form.data,
+        vehicleId: await ownVehicleId(values.vehicleId, user.id),
         sellerId: user.id,
         photos: { create: photoIds.map((id, position) => ({ id, position })) },
         documents: { create: insuranceIds.map((id) => ({ id, kind: "INSURANCE" as const })) },
@@ -139,6 +147,7 @@ export async function updateListing(_prev: FormState, formData: FormData): Promi
   const { values } = form;
   if (!form.data) return { errors: form.errors, values };
 
+  const vehicleId = await ownVehicleId(values.vehicleId, user.id);
   // A new attestation replaces the old one; a listing switched to a sale drops it.
   const oldInsurance = form.insurance || !form.isRent ? listing.documents.map((d) => d.id) : [];
   let addedIds: string[];
@@ -158,6 +167,7 @@ export async function updateListing(_prev: FormState, formData: FormData): Promi
         where: { id },
         data: {
           ...form.data,
+          vehicleId,
           status: "PENDING",
           rejectionReason: null,
           // Remembered across several edits until one is published.

@@ -45,8 +45,8 @@ export default async function Home() {
       <section className="trust" aria-label="Engagements">
         <ul className="wrap">
           <li>
-            <strong>Annonces contrôlées</strong>
-            <span className="muted">Vérifiées une à une avant publication</span>
+            <strong>Passeport et QR AVS</strong>
+            <span className="muted">Une identité vérifiable par véhicule</span>
           </li>
           <li>
             <strong>Échanges sur MonAuto</strong>

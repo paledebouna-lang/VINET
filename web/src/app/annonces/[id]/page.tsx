@@ -21,6 +21,7 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
     include: {
       photos: { orderBy: { position: "asc" } },
       seller: { select: { sellerProfile: true } },
+      vehicle: { select: { avsId: true, verifiedAt: true } },
       favorites: { where: { userId: user?.id ?? "" } },
       conversations: { where: { buyerId: user?.id ?? "" }, select: { id: true } },
       // Days already taken, shown so that a renter picks free dates.
@@ -102,6 +103,18 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
               </div>
             )}
           </dl>
+          {listing.vehicle && (
+            <div className="passport">
+              <p className="passport-title">Passeport AVS</p>
+              <p className="mono">{listing.vehicle.avsId}</p>
+              <p className="small">
+                {listing.vehicle.verifiedAt
+                  ? "Carte grise vérifiée par MonAuto."
+                  : "Carte grise en cours de vérification."}{" "}
+                <Link href={`/v/${listing.vehicle.avsId}`}>Vérifier ce véhicule</Link>
+              </p>
+            </div>
+          )}
           <p className="description">{listing.description}</p>
           {isRent ? (
             <>

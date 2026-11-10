@@ -5,7 +5,7 @@ import { getUser } from "@/lib/session";
 
 const notFound = () => new Response(null, { status: 404 });
 
-/** Private images: insurance attestations, driving licences, inspection photos. Never public. */
+/** Private images: registration papers, insurance attestations, driving licences, inspection photos. Never public. */
 export async function GET(request: Request, ctx: RouteContext<"/documents/[id]">) {
   const { id } = await ctx.params;
   const user = await getUser();
@@ -15,6 +15,7 @@ export async function GET(request: Request, ctx: RouteContext<"/documents/[id]">
     where: { id },
     select: {
       listing: { select: { sellerId: true } },
+      vehicle: { select: { ownerId: true } },
       booking: { select: { renterId: true, listing: { select: { sellerId: true } } } },
       inspection: { select: { booking: { select: { renterId: true, listing: { select: { sellerId: true } } } } } },
     },
@@ -23,7 +24,7 @@ export async function GET(request: Request, ctx: RouteContext<"/documents/[id]">
 
   // An attestation belongs to the listing's owner; licences and inspection photos to the two parties.
   const booking = doc.booking ?? doc.inspection?.booking;
-  const allowed = [doc.listing?.sellerId, booking?.renterId, booking?.listing.sellerId];
+  const allowed = [doc.listing?.sellerId, doc.vehicle?.ownerId, booking?.renterId, booking?.listing.sellerId];
   if (user.role !== "admin" && !allowed.includes(user.id)) return notFound();
 
   const small = new URL(request.url).searchParams.has("s");

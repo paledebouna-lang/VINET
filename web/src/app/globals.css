@@ -965,3 +965,99 @@ hr {
 .wrap-anywhere {
   overflow-wrap: anywhere;
 }
+
+/* AVS passport */
+.mono {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+
+.passport {
+  padding: 20px;
+  border-radius: 16px;
+  background: var(--ink);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.passport p {
+  margin: 0;
+}
+
+.passport a {
+  color: var(--gold);
+}
+
+.passport-title {
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.passport .facts dt {
+  color: var(--ink-muted);
+}
+
+.passport .facts dd {
+  text-align: right;
+}
+
+.check.top {
+  align-items: flex-start;
+  font-weight: 400;
+}
+
+.check.top input {
+  margin-top: 2px;
+  flex: none;
+}
+
+.qr-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: #fff;
+  color: #000;
+  max-width: 420px;
+}
+
+.qr-label img {
+  display: block;
+}
+
+.qr-label p {
+  margin: 0 0 4px;
+}
+
+.qr-brand {
+  font: 700 18px var(--font-display);
+}
+
+/* Printing the passport page prints the sticker alone. */
+@media print {
+  .site-header,
+  .site-footer,
+  .admin-nav,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .card {
+    border: 0;
+    padding: 0;
+  }
+}

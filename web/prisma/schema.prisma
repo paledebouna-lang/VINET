@@ -40,6 +40,8 @@ model User {
   // Set by an admin: a suspended account cannot sign in and its listings go offline.
   suspendedAt         DateTime?
   tickets             Ticket[]
+  vehicles            Vehicle[]
+  sightings           Sighting[]
   sessions            Session[]
   accounts            Account[]
   listings            Listing[]
@@ -149,6 +151,9 @@ model Listing {
   // A rental vehicle must carry a GPS fitted by its owner; the serial is never public.
   gpsModel          String?
   gpsSerial         String?
+  // The AVS passport of the vehicle on offer, when its seller has one.
+  vehicleId         String?
+  vehicle           Vehicle?       @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
   documents         Document[]
   bookings          Booking[]
   commune           String
@@ -332,6 +337,7 @@ enum DocumentKind {
   INSURANCE
   LICENCE
   INSPECTION
+  REGISTRATION
 }
 
 // Private images, never served publicly: see /documents/[id]. Files live in UPLOAD_DIR like photos.
@@ -344,11 +350,14 @@ model Document {
   booking      Booking?     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   inspectionId String?
   inspection   Inspection?  @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  vehicleId    String?
+  vehicle      Vehicle?     @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
   position     Int          @default(0)
 
   @@index([listingId])
   @@index([bookingId])
   @@index([inspectionId])
+  @@index([vehicleId])
   @@map("document")
 }
 
@@ -368,4 +377,57 @@ model Ticket {
   @@index([answeredAt])
   @@index([userId])
   @@map("ticket")
+}
+
+// AVS Vehicle Passport: the digital identity of a vehicle. It does not replace
+// the registration papers, a title of ownership or an insurance certificate.
+model Vehicle {
+  id         String     @id @default(cuid())
+  // Printed in the QR code. Random, so that a valid one cannot be guessed.
+  avsId      String     @unique
+  ownerId    String
+  owner      User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  category   Category
+  brand      String
+  model      String
+  year       Int
+  color      String
+  // VIN or frame number. Unique: a second passport for the same vehicle is a fraud signal.
+  serial     String     @unique
+  plate      String?
+  // Set by an admin after checking the registration papers.
+  verifiedAt DateTime?
+  createdAt  DateTime   @default(now())
+  listings   Listing[]
+  sightings  Sighting[]
+  documents  Document[]
+
+  @@index([ownerId])
+  @@map("vehicle")
+}
+
+enum SightingKind {
+  OBSERVATION
+  SUSPECT
+}
+
+// What someone reports after scanning a QR code. The position, when given, is the
+// reporter's phone at that moment: a report, never a certified position of the vehicle.
+model Sighting {
+  id         String       @id @default(cuid())
+  vehicleId  String
+  vehicle    Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter   User         @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  kind       SightingKind
+  note       String
+  latitude   Float?
+  longitude  Float?
+  accuracyM  Int?
+  createdAt  DateTime     @default(now())
+  reviewedAt DateTime?
+
+  @@index([vehicleId, createdAt])
+  @@index([reporterId, createdAt])
+  @@map("sighting")
 }
