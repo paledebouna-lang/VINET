@@ -121,9 +121,24 @@ Reste à faire :
 Sortie : une location complète réservation → départ → retour → clôture, sans intervention technique. Vérifié en local.
 
 ### Lot 4 — Administration et support
-- Utilisateurs, rôles, modération, paiements, litiges, paramètres pays/devise.
 
-Sortie : **MVP marketplace** (phase 1 du cahier).
+Fait :
+
+- **Espace d'administration** en quatre écrans, réservé aux administrateurs : modération, utilisateurs, demandes et litiges, journal.
+- **Tableau de bord** : comptes, annonces en ligne, locations en cours, demandes en attente.
+- **Utilisateurs** : recherche par nom, téléphone, e-mail ou matricule ; changement de rôle ; suspension et réactivation. Suspendre un compte le déconnecte partout, l'empêche de se reconnecter et retire ses annonces. Un administrateur ne peut ni changer son propre rôle ni se suspendre.
+- **Aide** : tout membre écrit à l'équipe depuis « Aide et assistance » et y lit la réponse, aussi envoyée par e-mail.
+- **Litiges de location** : une des deux parties signale un problème depuis la page de la location. L'équipe consulte alors le contrat, les états des lieux et les échanges entre les deux parties, puis répond ; les deux parties voient la réponse.
+- **Journal d'audit** consultable et filtrable : connexions, décisions de modération, rôles, suspensions, signatures, étapes des locations, réponses de l'équipe.
+
+Reste à faire :
+
+- **Double vérification des comptes agence et administrateur.** Le module de la bibliothèque d'authentification ne couvre pas la connexion par code : c'est un travail à part, à faire avant la mise en ligne.
+- **Paiements** : rien à administrer tant que CinetPay n'est pas branché.
+- **Pays et devises** : un seul pays et une seule devise pour le MVP ; le reste arrive au lot 10.
+- Un litige se conclut par une réponse de l'équipe, sans remboursement ni pénalité automatiques.
+
+Sortie : **MVP marketplace**. Les fonctions sont là et vérifiées en local ; la mise en ligne attend le VPS, les SMS, CinetPay et la double vérification.
 
 ### Lot 5 — Passeport AVS et QR
 - Identifiant AVS, QR signé côté serveur, page publique de vérification à statut limité.

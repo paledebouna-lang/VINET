@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { formatPrice, listingInput, maskContacts, maskVin, matriculeOf, rentalInput, sellerProfileInput } from "./listing.ts";
+import { formatPrice, listingInput, maskContacts, maskVin, matriculeOf, parseMatricule, rentalInput, sellerProfileInput } from "./listing.ts";
 
 const valid = {
   kind: "SALE",
@@ -71,6 +71,10 @@ test("builds a matricule that differs for companies and private persons", () => 
   assert.equal(matriculeOf(42, "Lagune Auto"), "MA-E-000042");
   assert.equal(matriculeOf(42, null), "MA-P-000042");
   assert.equal(matriculeOf(1234567, ""), "MA-P-1234567");
+  assert.equal(parseMatricule(" ma-e-000042 "), 42);
+  assert.equal(parseMatricule("MA-P-1234567"), 1234567);
+  assert.equal(parseMatricule("MA-X-000042"), null);
+  assert.equal(parseMatricule("42"), null);
 });
 
 test("masks phone numbers and e-mails but leaves prices, years and mileage alone", () => {

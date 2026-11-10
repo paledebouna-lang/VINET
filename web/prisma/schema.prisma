@@ -37,6 +37,9 @@ model User {
   role                String         @default("particulier")
   // Every account gets a number at sign-up; the matricule is built from it (see matriculeOf).
   memberNumber        Int            @unique @default(autoincrement())
+  // Set by an admin: a suspended account cannot sign in and its listings go offline.
+  suspendedAt         DateTime?
+  tickets             Ticket[]
   sessions            Session[]
   accounts            Account[]
   listings            Listing[]
@@ -294,6 +297,7 @@ model Booking {
   closedAt          DateTime?
   documents         Document[]
   inspections       Inspection[]
+  tickets           Ticket[]
 
   @@index([listingId, status])
   @@index([renterId])
@@ -346,4 +350,22 @@ model Document {
   @@index([bookingId])
   @@index([inspectionId])
   @@map("document")
+}
+
+// A request to the MonAuto team. With a booking it is a dispute about that rental,
+// and both parties of the rental see the team's answer.
+model Ticket {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookingId  String?
+  booking    Booking?  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  message    String
+  createdAt  DateTime  @default(now())
+  answer     String?
+  answeredAt DateTime?
+
+  @@index([answeredAt])
+  @@index([userId])
+  @@map("ticket")
 }

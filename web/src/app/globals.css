@@ -928,3 +928,40 @@ hr {
 .full-row:empty {
   display: none;
 }
+
+/* Administration */
+.admin-nav {
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+}
+
+.admin-nav .wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
+}
+
+.admin-nav a {
+  padding: 14px 0;
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.admin-nav a:hover {
+  color: var(--primary);
+}
+
+.inline-select {
+  height: 46px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  font: inherit;
+  color: var(--text);
+  background: var(--card);
+}
+
+.wrap-anywhere {
+  overflow-wrap: anywhere;
+}

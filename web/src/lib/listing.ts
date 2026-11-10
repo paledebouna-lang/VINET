@@ -111,6 +111,12 @@ export const sellerProfileInput = z.object({
 export const matriculeOf = (memberNumber: number, company: string | null | undefined) =>
   `MA-${company ? "E" : "P"}-${String(memberNumber).padStart(6, "0")}`;
 
+/** "MA-P-000042" → 42, so that the team can look an account up by its matricule. */
+export function parseMatricule(text: string) {
+  const match = /^MA-[EP]-0*(\d{1,9})$/i.exec(text.trim());
+  return match ? Number(match[1]) : null;
+}
+
 /**
  * Hides phone numbers and e-mail addresses so that exchanges stay on the site.
  * Phone numbers are recognised by their leading 0 or "+", which prices never have.

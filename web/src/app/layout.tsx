@@ -41,6 +41,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <footer className="site-footer">
           <div className="wrap">
             <span>monauto.org</span>
+            <Link href="/aide">Aide et assistance</Link>
             <span>Sécurité AVS · Réseau VINET</span>
           </div>
         </footer>

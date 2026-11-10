@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cancelBooking, confirmInspection, decideBooking, signContract } from "../../rental-actions";
+import { TicketForm } from "../../aide/ticket-form";
 import { SubmitButton, SubmitForm } from "../../submit-form";
 import { InspectionForm } from "../forms";
 import { prisma } from "@/lib/db";
@@ -64,17 +65,20 @@ export default async function Location({ params }: PageProps<"/locations/[id]">)
   const { id } = await params;
   const user = await requireUser();
   const booking = await prisma.booking.findFirst({
-    // Only the renter and the owner can open a rental.
-    where: { id, OR: [{ renterId: user.id }, { listing: { sellerId: user.id } }] },
+    // Only the renter, the owner and, to handle a dispute, an admin can open a rental.
+    where: user.role === "admin" ? { id } : { id, OR: [{ renterId: user.id }, { listing: { sellerId: user.id } }] },
     include: {
       listing: { select: { id: true, brand: true, model: true, year: true, sellerId: true, kmPerDay: true } },
       documents: { where: { kind: "LICENCE" } },
       inspections: { include: { documents: { orderBy: { position: "asc" } } } },
+      tickets: { orderBy: { createdAt: "asc" } },
     },
   });
   if (!booking) notFound();
 
   const isOwner = booking.listing.sellerId === user.id;
+  const isRenter = booking.renterId === user.id;
+  const isParty = isOwner || isRenter;
   const { status, listing } = booking;
   const fields = { id };
   const departure = booking.inspections.find((i) => i.phase === "DEPARTURE");
@@ -106,7 +110,9 @@ export default async function Location({ params }: PageProps<"/locations/[id]">)
         {booking.days > 1 ? "s" : ""} · {formatPrice(booking.totalFcfa)} · dépôt de garantie{" "}
         {formatPrice(booking.depositFcfa)}
       </p>
-      <p className="muted small">{isOwner ? "Vous louez ce véhicule." : "Vous êtes le locataire."}</p>
+      <p className="muted small">
+        {isOwner ? "Vous louez ce véhicule." : isRenter ? "Vous êtes le locataire." : "Consultation par l'équipe MonAuto."}
+      </p>
 
       {step >= 0 && (
         <ol className="steps" aria-label="Étapes de la location">
@@ -165,9 +171,9 @@ export default async function Location({ params }: PageProps<"/locations/[id]">)
             Locataire :{" "}
             {booking.renterSignedAt ? `signé le ${dateTimeFr.format(booking.renterSignedAt)}` : "pas encore signé"}
           </p>
-          {status === "ACCEPTED" && !mySignature && (
+          {status === "ACCEPTED" && isParty && !mySignature && (
             <SubmitForm action={signContract} fields={fields}>
-              {!isOwner && (
+              {isRenter && (
                 <>
                   <p className="notice-plain">{TRACKING_NOTICE}</p>
                   <label className="check">
@@ -182,7 +188,7 @@ export default async function Location({ params }: PageProps<"/locations/[id]">)
               <SubmitButton>Signer le contrat</SubmitButton>
             </SubmitForm>
           )}
-          {status === "ACCEPTED" && mySignature && <p className="muted">En attente de la signature de l&apos;autre partie.</p>}
+          {status === "ACCEPTED" && isParty && mySignature && <p className="muted">En attente de la signature de l&apos;autre partie.</p>}
         </section>
       )}
 
@@ -203,7 +209,7 @@ export default async function Location({ params }: PageProps<"/locations/[id]">)
               />
             </>
           )}
-          {!isOwner && pending && !pending.confirmedAt && (
+          {isRenter && pending && !pending.confirmedAt && (
             <SubmitForm action={confirmInspection} fields={fields}>
               <p className="muted small">
                 Vérifiez le kilométrage, le carburant et les photos. En cas de désaccord, écrivez-le au loueur dans
@@ -214,7 +220,7 @@ export default async function Location({ params }: PageProps<"/locations/[id]">)
               </SubmitButton>
             </SubmitForm>
           )}
-          {!isOwner && !pending && (status === "SIGNED" || status === "ACTIVE") && (
+          {isRenter && !pending && (status === "SIGNED" || status === "ACTIVE") && (
             <p className="muted">
               {status === "SIGNED"
                 ? "Le loueur enregistre l'état des lieux au moment du départ."
@@ -248,7 +254,33 @@ export default async function Location({ params }: PageProps<"/locations/[id]">)
         </section>
       )}
 
-      {(status === "REQUESTED" || status === "ACCEPTED" || status === "SIGNED") && (
+      {(booking.tickets.length > 0 || (isParty && step >= 1)) && (
+        <section className="card stack">
+          <h2 className="sub-title">Un problème sur cette location ?</h2>
+          {booking.tickets.map((t) => (
+            <div key={t.id} className="stack tight">
+              <p className="description">{t.message}</p>
+              <p className="muted small">
+                Signalé par {t.userId === booking.renterId ? "le locataire" : "le loueur"} le{" "}
+                {dateTimeFr.format(t.createdAt)}
+              </p>
+              {t.answer ? (
+                <div className="message">
+                  <p>{t.answer}</p>
+                  <p className="muted small">Équipe MonAuto · {dateTimeFr.format(t.answeredAt!)}</p>
+                </div>
+              ) : (
+                <p className="muted small">En attente de la réponse de l&apos;équipe MonAuto.</p>
+              )}
+            </div>
+          ))}
+          {isParty && step >= 1 && (
+            <TicketForm bookingId={id} label="Décrivez le problème : l'équipe MonAuto intervient" />
+          )}
+        </section>
+      )}
+
+      {isParty && (status === "REQUESTED" || status === "ACCEPTED" || status === "SIGNED") && (
         <SubmitForm action={cancelBooking} fields={fields}>
           <SubmitButton className="btn btn-ghost">Annuler cette location</SubmitButton>
         </SubmitForm>

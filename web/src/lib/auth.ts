@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { emailOTP, phoneNumber } from "better-auth/plugins";
 import { prisma } from "./db";
@@ -62,6 +63,11 @@ export const auth = betterAuth({
     },
     session: {
       create: {
+        // A suspended account cannot sign in. Its open sessions are deleted when it is suspended.
+        before: async (session) => {
+          const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { suspendedAt: true } });
+          if (user?.suspendedAt) throw new APIError("FORBIDDEN", { message: "ACCOUNT_SUSPENDED" });
+        },
         after: async (session) => {
           await prisma.auditLog.create({
             data: {

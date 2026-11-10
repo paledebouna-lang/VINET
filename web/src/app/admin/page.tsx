@@ -9,7 +9,11 @@ export const instant = false;
 
 export default async function Admin() {
   await requireAdmin();
-  const [identities, pending, reports] = await Promise.all([
+  const [users, online, activeRentals, openTickets, identities, pending, reports] = await Promise.all([
+    prisma.user.count(),
+    prisma.listing.count({ where: { status: "PUBLISHED" } }),
+    prisma.booking.count({ where: { status: "ACTIVE" } }),
+    prisma.ticket.count({ where: { answeredAt: null } }),
     prisma.sellerProfile.findMany({
       where: { verifiedAt: null },
       include: { user: { select: { phoneNumber: true, email: true, memberNumber: true } } },
@@ -33,6 +37,24 @@ export default async function Admin() {
   return (
     <div className="section wrap medium">
       <h1 className="page-title">Modération</h1>
+      <dl className="specs">
+        <div>
+          <dt>Comptes</dt>
+          <dd>{users}</dd>
+        </div>
+        <div>
+          <dt>Annonces en ligne</dt>
+          <dd>{online}</dd>
+        </div>
+        <div>
+          <dt>Locations en cours</dt>
+          <dd>{activeRentals}</dd>
+        </div>
+        <div>
+          <dt>Demandes en attente</dt>
+          <dd>{openTickets}</dd>
+        </div>
+      </dl>
 
       <h2 className="sub-title">Identités à vérifier ({identities.length})</h2>
       {identities.length === 0 && <p className="muted">Aucune identité en attente.</p>}

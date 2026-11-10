@@ -61,7 +61,11 @@ export default function Connexion() {
         : await authClient.signIn.emailOtp({ email: sentTo, otp: code });
     setBusy(false);
     if (res.error) {
-      setError("Code incorrect ou expiré. Vérifiez-le ou demandez-en un nouveau.");
+      setError(
+        res.error.message === "ACCOUNT_SUSPENDED"
+          ? "Ce compte est suspendu. Écrivez à l'équipe MonAuto pour en savoir plus."
+          : "Code incorrect ou expiré. Vérifiez-le ou demandez-en un nouveau.",
+      );
       return;
     }
     router.push("/compte");
