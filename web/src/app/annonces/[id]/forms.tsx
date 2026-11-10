@@ -1,36 +1,30 @@
 "use client";
 
 import { useActionState } from "react";
-import { type FormState, reportListing, sendInquiry } from "../../actions";
+import { type FormState, reportListing, sendMessage } from "../../actions";
 import { FieldError } from "../../field-error";
 
-export function InquiryForm({ listingId }: { listingId: string }) {
-  const [state, action, pending] = useActionState<FormState, FormData>(sendInquiry, {});
-  if (state.ok) {
-    return (
-      <p className="notice" role="status">
-        Demande envoyée. Le vendeur vous recontactera directement.
-      </p>
-    );
-  }
+/** Opens the conversation with the seller; on success the server redirects to it. */
+export function MessageForm({ listingId }: { listingId: string }) {
+  const [state, action, pending] = useActionState<FormState, FormData>(sendMessage, {});
   return (
     <form action={action} className="stack">
       <input type="hidden" name="listingId" value={listingId} />
       <div className="field">
-        <label htmlFor="message">Votre message au vendeur</label>
+        <label htmlFor="body">Votre message au vendeur</label>
         <textarea
-          id="message"
-          name="message"
+          id="body"
+          name="body"
           rows={4}
           required
-          aria-describedby="message-error"
+          aria-describedby="body-error"
           defaultValue="Bonjour, votre véhicule m'intéresse. Est-il toujours disponible ? Je souhaite le voir."
         />
-        <FieldError state={state} name="message" />
-        <small>Votre numéro ou votre e-mail est transmis au vendeur avec ce message.</small>
+        <FieldError state={state} name="body" />
+        <small>Les échanges se font sur MonAuto. Vos coordonnées ne sont pas communiquées au vendeur.</small>
       </div>
       <button className="btn btn-primary" disabled={pending}>
-        Contacter le vendeur
+        Écrire au vendeur
       </button>
     </form>
   );

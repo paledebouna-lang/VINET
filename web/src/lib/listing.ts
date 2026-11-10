@@ -62,6 +62,14 @@ export const listingInput = z.object({
     .transform((v) => v || null),
 });
 
+export const sellerProfileInput = z.object({
+  fullName: z.string().trim().min(3, "Indiquez vos nom et prénoms.").max(80, "80 caractères au maximum."),
+  yearsExperience: int(0, 60, "Entre 0 et 60 ans."),
+  matricule: text(40),
+  company: text(80),
+  position: text(80),
+});
+
 /** The public form of a VIN: enough to compare with the papers, not enough to clone them. */
 export function maskVin(vin: string) {
   return `${vin.slice(0, 4)}${"•".repeat(9)}${vin.slice(-4)}`;

@@ -39,8 +39,14 @@ export default async function Compte() {
             <dd>{roleLabels[user.role] ?? user.role}</dd>
           </div>
         </dl>
+        <Link href="/messages" className="btn btn-ghost">
+          Messages
+        </Link>
         <Link href="/mes-annonces" className="btn btn-ghost">
-          Mes annonces et demandes reçues
+          Mes annonces
+        </Link>
+        <Link href="/compte/identite" className="btn btn-ghost">
+          Identité du vendeur
         </Link>
         {user.role === "admin" && (
           <Link href="/admin" className="btn btn-ghost">

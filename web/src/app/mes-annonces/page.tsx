@@ -2,7 +2,7 @@ import Link from "next/link";
 import { archiveListing } from "../actions";
 import { prisma } from "@/lib/db";
 import { formatPrice } from "@/lib/listing";
-import { contactOf, requireUser } from "@/lib/session";
+import { requireUser } from "@/lib/session";
 
 export const instant = false;
 
@@ -13,19 +13,12 @@ const statusLabels = {
   ARCHIVED: "Retirée",
 } as const;
 
-const dateFr = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" });
-
 export default async function MesAnnonces() {
   const user = await requireUser();
   const listings = await prisma.listing.findMany({
     where: { sellerId: user.id },
     orderBy: { createdAt: "desc" },
-    include: {
-      inquiries: {
-        orderBy: { createdAt: "desc" },
-        include: { buyer: { select: { phoneNumber: true, email: true } } },
-      },
-    },
+    include: { _count: { select: { conversations: true } } },
   });
 
   return (
@@ -55,26 +48,22 @@ export default async function MesAnnonces() {
             </div>
             {listing.status === "REJECTED" && <p className="alert">Motif du refus : {listing.rejectionReason}</p>}
 
-            {listing.inquiries.length > 0 && (
-              <div className="stack">
-                <h3 className="sub-title">Demandes reçues ({listing.inquiries.length})</h3>
-                {listing.inquiries.map((inquiry) => (
-                  <div key={inquiry.id} className="message">
-                    <p>{inquiry.message}</p>
-                    <p className="muted small">
-                      {contactOf(inquiry.buyer)} · {dateFr.format(inquiry.createdAt)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {(listing.status === "PENDING" || listing.status === "PUBLISHED") && (
-              <form action={archiveListing}>
-                <input type="hidden" name="id" value={listing.id} />
-                <button className="btn btn-ghost">Retirer l&apos;annonce</button>
-              </form>
-            )}
+            <div className="row start">
+              <Link href={`/annonces/${listing.id}/modifier`} className="btn btn-ghost">
+                Modifier
+              </Link>
+              {listing._count.conversations > 0 && (
+                <Link href="/messages" className="btn btn-ghost">
+                  {listing._count.conversations} conversation{listing._count.conversations > 1 ? "s" : ""}
+                </Link>
+              )}
+              {(listing.status === "PENDING" || listing.status === "PUBLISHED") && (
+                <form action={archiveListing}>
+                  <input type="hidden" name="id" value={listing.id} />
+                  <button className="btn btn-ghost">Retirer l&apos;annonce</button>
+                </form>
+              )}
+            </div>
           </article>
         ))}
       </div>

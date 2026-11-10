@@ -49,8 +49,8 @@ export default async function Home() {
             <span className="muted">Vérifiées une à une avant publication</span>
           </li>
           <li>
-            <strong>Contact protégé</strong>
-            <span className="muted">Aucun numéro affiché publiquement</span>
+            <strong>Échanges sur MonAuto</strong>
+            <span className="muted">Ni téléphone ni e-mail ne sont affichés</span>
           </li>
           <li>
             <strong>Localisation approximative</strong>

@@ -25,20 +25,22 @@ model AuditLog {
 }
 
 model User {
-  id                  String    @id
+  id                  String         @id
   name                String
   email               String
-  emailVerified       Boolean   @default(false)
+  emailVerified       Boolean        @default(false)
   image               String?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
   phoneNumber         String?
   phoneNumberVerified Boolean?
-  role                String    @default("particulier")
+  role                String         @default("particulier")
   sessions            Session[]
   accounts            Account[]
   listings            Listing[]
-  inquiries           Inquiry[]
+  conversations       Conversation[]
+  messages            Message[]
+  sellerProfile       SellerProfile?
   favorites           Favorite[]
   reports             Report[]
 
@@ -119,29 +121,31 @@ enum Category {
 }
 
 model Listing {
-  id              String         @id @default(cuid())
-  sellerId        String
-  seller          User           @relation(fields: [sellerId], references: [id], onDelete: Cascade)
-  status          ListingStatus  @default(PENDING)
-  category        Category
-  brand           String
-  model           String
-  year            Int
-  mileageKm       Int
-  fuel            String
-  transmission    String
-  priceFcfa       Int
-  commune         String
-  description     String
+  id                String         @id @default(cuid())
+  sellerId          String
+  seller            User           @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  status            ListingStatus  @default(PENDING)
+  category          Category
+  brand             String
+  model             String
+  year              Int
+  mileageKm         Int
+  fuel              String
+  transmission      String
+  priceFcfa         Int
+  // The price before the seller's last edit, kept until that edit is published and watchers are told.
+  previousPriceFcfa Int?
+  commune           String
+  description       String
   // Never shown in full to the public: see maskVin.
-  vin             String?
-  rejectionReason String?
-  createdAt       DateTime       @default(now())
-  publishedAt     DateTime?
-  photos          ListingPhoto[]
-  inquiries       Inquiry[]
-  favorites       Favorite[]
-  reports         Report[]
+  vin               String?
+  rejectionReason   String?
+  createdAt         DateTime       @default(now())
+  publishedAt       DateTime?
+  photos            ListingPhoto[]
+  conversations     Conversation[]
+  favorites         Favorite[]
+  reports           Report[]
 
   @@index([status, publishedAt])
   @@index([sellerId])
@@ -159,26 +163,63 @@ model ListingPhoto {
   @@map("listing_photo")
 }
 
-model Inquiry {
-  id        String   @id @default(cuid())
-  listingId String
-  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  buyerId   String
-  buyer     User     @relation(fields: [buyerId], references: [id], onDelete: Cascade)
-  message   String
-  createdAt DateTime @default(now())
+// The seller's public identity. No phone number or e-mail is ever part of it.
+model SellerProfile {
+  userId          String    @id
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName        String
+  yearsExperience Int
+  // Shown to admins only, to check the identity against the employer's records.
+  matricule       String
+  company         String
+  position        String
+  // Set by an admin; cleared whenever the seller edits the profile.
+  verifiedAt      DateTime?
 
-  // One request per buyer and listing: a second one replaces the first.
+  @@map("seller_profile")
+}
+
+// All buyer-seller exchanges happen here; contact details are never revealed to the other party.
+model Conversation {
+  id            String    @id @default(cuid())
+  listingId     String
+  listing       Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyerId       String
+  buyer         User      @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+  lastMessageAt DateTime  @default(now())
+  // A side has unread messages when its read time is older than lastMessageAt.
+  buyerReadAt   DateTime?
+  sellerReadAt  DateTime?
+  messages      Message[]
+
   @@unique([listingId, buyerId])
-  @@map("inquiry")
+  @@index([buyerId])
+  @@map("conversation")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body           String
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+  @@index([senderId, createdAt])
+  @@map("message")
 }
 
 model Favorite {
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  listingId String
-  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId   String
+  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  // The price when saved: a lower price later is the user's price alert.
+  priceAtSave Int
 
   @@id([userId, listingId])
   @@map("favorite")

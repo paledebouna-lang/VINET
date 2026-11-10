@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { formatPrice, listingInput, maskVin } from "./listing.ts";
+import { formatPrice, listingInput, maskVin, sellerProfileInput } from "./listing.ts";
 
 const valid = {
   category: "VOITURE",
@@ -43,4 +43,12 @@ test("rejects incoherent values", () => {
 test("masks a VIN and formats a price", () => {
   assert.equal(maskVin("JTDBR32E720123456"), "JTDB•••••••••3456");
   assert.equal(formatPrice(9800000), "9 800 000 FCFA");
+});
+
+test("validates a seller identity", () => {
+  const identity = { fullName: "Kouassi Awa Marie", yearsExperience: "7", matricule: "AG-2041", company: "Lagune Auto", position: "Conseillère commerciale" };
+  assert.equal(sellerProfileInput.parse(identity).yearsExperience, 7);
+  assert.equal(sellerProfileInput.safeParse({ ...identity, fullName: "A" }).success, false);
+  assert.equal(sellerProfileInput.safeParse({ ...identity, yearsExperience: "75" }).success, false);
+  assert.equal(sellerProfileInput.safeParse({ ...identity, matricule: " " }).success, false);
 });

@@ -4,7 +4,7 @@ import { toggleFavorite } from "../../actions";
 import { prisma } from "@/lib/db";
 import { CATEGORIES, formatNumber, formatPrice, maskVin } from "@/lib/listing";
 import { getUser } from "@/lib/session";
-import { InquiryForm, ReportForm } from "./forms";
+import { MessageForm, ReportForm } from "./forms";
 
 export const instant = false;
 
@@ -15,8 +15,9 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
     where: { id },
     include: {
       photos: { orderBy: { position: "asc" } },
-      seller: { select: { phoneNumberVerified: true } },
+      seller: { select: { sellerProfile: true } },
       favorites: { where: { userId: user?.id ?? "" } },
+      conversations: { where: { buyerId: user?.id ?? "" }, select: { id: true } },
     },
   });
   const isOwner = user?.id === listing?.sellerId;
@@ -24,7 +25,9 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
   if (!listing || (listing.status !== "PUBLISHED" && !isOwner && user?.role !== "admin")) notFound();
 
   const title = `${listing.brand} ${listing.model} ${listing.year}`;
-  const isFavorite = listing.favorites.length > 0;
+  const favorite = listing.favorites[0];
+  const conversation = listing.conversations[0];
+  const seller = listing.seller.sellerProfile;
 
   return (
     <div className="section wrap">
@@ -76,27 +79,54 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
         </div>
 
         <aside className="card stack">
-          <p className="muted small">
-            {listing.seller.phoneNumberVerified ? "Vendeur au numéro de téléphone vérifié." : "Vendeur inscrit par e-mail."}
-          </p>
+          {/* The seller's public identity: never a phone number or an e-mail. */}
+          {seller && (
+            <div className="seller">
+              <p className="muted small">Vendeur</p>
+              <p className="card-title">{seller.fullName}</p>
+              <p>
+                {seller.position}, {seller.company}
+              </p>
+              <p className="muted small">
+                {seller.yearsExperience} an{seller.yearsExperience > 1 ? "s" : ""} d&apos;expérience ·{" "}
+                {seller.verifiedAt ? "Identité vérifiée par MonAuto" : "Identité en cours de vérification"}
+              </p>
+            </div>
+          )}
           {isOwner ? (
-            <Link href="/mes-annonces" className="btn btn-ghost">
-              Gérer mon annonce
-            </Link>
+            <>
+              <Link href={`/annonces/${listing.id}/modifier`} className="btn btn-primary">
+                Modifier mon annonce
+              </Link>
+              <Link href="/mes-annonces" className="btn btn-ghost">
+                Mes annonces
+              </Link>
+            </>
           ) : listing.status !== "PUBLISHED" ? null : user ? (
             <>
-              <InquiryForm listingId={listing.id} />
+              {conversation ? (
+                <Link href={`/messages/${conversation.id}`} className="btn btn-primary">
+                  Continuer la conversation
+                </Link>
+              ) : (
+                <MessageForm listingId={listing.id} />
+              )}
               <form action={toggleFavorite}>
                 <input type="hidden" name="listingId" value={listing.id} />
-                <button className="btn btn-ghost full" aria-pressed={isFavorite}>
-                  {isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                <button className="btn btn-ghost full" aria-pressed={!!favorite}>
+                  {favorite ? "Retirer des favoris" : "Ajouter aux favoris et suivre le prix"}
                 </button>
               </form>
+              {favorite && favorite.priceAtSave > listing.priceFcfa && (
+                <p className="notice">
+                  Prix en baisse de {formatPrice(favorite.priceAtSave - listing.priceFcfa)} depuis votre ajout.
+                </p>
+              )}
               <ReportForm listingId={listing.id} />
             </>
           ) : (
             <Link href="/connexion" className="btn btn-primary">
-              Se connecter pour contacter le vendeur
+              Se connecter pour écrire au vendeur
             </Link>
           )}
         </aside>

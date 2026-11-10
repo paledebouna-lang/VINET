@@ -72,11 +72,12 @@ a:hover {
   align-items: center;
   justify-content: center;
   min-height: 46px;
-  padding: 0 20px;
+  padding: 8px 20px;
   border: 1px solid transparent;
   border-radius: 10px;
   font: inherit;
   font-weight: 600;
+  text-align: center;
   text-decoration: none;
   cursor: pointer;
 }
@@ -667,6 +668,141 @@ details summary {
   display: block;
   width: 120px;
   height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Identity, messaging, comparison */
+.stack.tight {
+  gap: 8px;
+}
+
+.seller p {
+  margin: 0;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-weight: 600;
+}
+
+.check input,
+.keep-photos input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary);
+}
+
+.keep-photos {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.keep-photos legend {
+  padding: 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.keep-photos label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.keep-photos img {
+  width: 120px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.keep-photos span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+}
+
+.conversation {
+  display: block;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.conversation p {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.thread {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.thread li {
+  max-width: 85%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+}
+
+.thread li.mine {
+  align-self: flex-end;
+  border-color: transparent;
+  background: #e4ecff;
+}
+
+.thread p {
+  margin: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.compare {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+
+.compare th,
+.compare td {
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.compare tbody th {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.compare thead img {
+  display: block;
+  width: 160px;
+  height: 120px;
+  margin-bottom: 8px;
   object-fit: cover;
   border-radius: 8px;
 }

@@ -1,13 +1,19 @@
 "use client";
 
 import { useActionState } from "react";
-import { type FormState, createListing } from "../actions";
+import { type FormState, createListing, updateListing } from "../actions";
 import { FieldError } from "../field-error";
 import { CATEGORIES, COMMUNES, FUELS, TRANSMISSIONS } from "@/lib/listing";
 
-export function ListingForm() {
-  const [state, action, pending] = useActionState<FormState, FormData>(createListing, {});
-  const v = state.values ?? {};
+type Existing = { id: string; values: Record<string, string>; photoIds: string[] };
+
+/** Creates a listing, or edits `existing` when given. */
+export function ListingForm({ existing }: { existing?: Existing }) {
+  const [state, action, pending] = useActionState<FormState, FormData>(
+    existing ? updateListing : createListing,
+    {},
+  );
+  const v = state.values ?? existing?.values ?? {};
 
   // One labelled text input wired to its server-side error.
   const input = (name: string, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
@@ -39,6 +45,7 @@ export function ListingForm() {
 
   return (
     <form action={action} className="card stack">
+      {existing && <input type="hidden" name="id" value={existing.id} />}
       <div className="form-grid">
         {select("category", "Catégorie", Object.entries(CATEGORIES))}
         {input("brand", "Marque", { placeholder: "Toyota" })}
@@ -68,15 +75,31 @@ export function ListingForm() {
         <FieldError state={state} name="description" />
       </div>
 
+      {existing && existing.photoIds.length > 0 && (
+        <fieldset className="keep-photos">
+          <legend>Photos actuelles : décochez celles à supprimer</legend>
+          {existing.photoIds.map((id, i) => (
+            <label key={id}>
+              <img src={`/photos/${id}?s`} alt={`Photo ${i + 1}`} />
+              <span>
+                <input type="checkbox" name="keep" value={id} defaultChecked /> Conserver
+              </span>
+            </label>
+          ))}
+        </fieldset>
+      )}
+
       <div className="field">
-        <label htmlFor="photos">Photos (1 à 8, 8 Mo chacune au maximum)</label>
+        <label htmlFor="photos">
+          {existing ? "Ajouter des photos" : "Photos"} (8 au total, 8 Mo chacune au maximum)
+        </label>
         <input
           id="photos"
           name="photos"
           type="file"
           accept="image/jpeg,image/png,image/webp"
           multiple
-          required
+          required={!existing}
           aria-describedby="photos-error"
         />
         <FieldError state={state} name="photos" />
@@ -84,12 +107,17 @@ export function ListingForm() {
 
       <div aria-live="polite">
         {state.errors?.form && <p className="alert">{state.errors.form[0]}</p>}
-        {state.errors && !state.errors.form && Object.keys(state.errors).length > 0 && (
-          <p className="alert">Corrigez les champs signalés, puis rajoutez vos photos.</p>
+        {state.errors && !state.errors.form && Object.values(state.errors).some(Boolean) && (
+          <p className="alert">Corrigez les champs signalés, puis rajoutez vos nouvelles photos.</p>
         )}
       </div>
+      {existing && (
+        <p className="muted small">
+          Une annonce modifiée repasse par la validation avant d&apos;être de nouveau en ligne.
+        </p>
+      )}
       <button className="btn btn-primary" disabled={pending}>
-        {pending ? "Envoi en cours…" : "Envoyer pour validation"}
+        {pending ? "Envoi en cours…" : existing ? "Enregistrer et renvoyer en validation" : "Envoyer pour validation"}
       </button>
     </form>
   );

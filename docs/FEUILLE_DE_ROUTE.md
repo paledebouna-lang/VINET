@@ -72,20 +72,22 @@ Sortie : un utilisateur crée un compte, se connecte, voit une page d'accueil vi
 
 Fait, sans paiement en ligne :
 
-- Dépôt d'annonce avec 1 à 8 photos et contrôle de cohérence (année, kilométrage, prix, numéro de série).
+- **Identité du vendeur**, obligatoire pour déposer une annonce : nom et prénoms, entreprise, fonction, années d'expérience, matricule. Le public voit tout sauf le matricule, réservé à l'équipe. Ni téléphone ni e-mail ne sont affichés. Un administrateur valide l'identité ; toute modification la remet en vérification.
+- **Dépôt d'annonce** avec 1 à 8 photos et contrôle de cohérence (année, kilométrage, prix, numéro de série).
+- **Modification d'une annonce** par son vendeur, photos comprises. Une annonce modifiée repasse par la validation.
 - Photos réencodées à l'envoi : la position GPS enregistrée par le téléphone est retirée.
 - Seule la commune est publique ; le numéro de série n'apparaît que masqué.
-- Modération : rien n'est en ligne avant la décision d'un administrateur ; un refus est motivé ; chaque décision est journalisée.
-- Recherche par marque ou modèle, catégorie, commune et budget.
-- Demande de contact : le vendeur reçoit le message et le contact de l'acheteur ; aucun numéro n'est public.
-- Favoris, signalement d'une annonce, retrait par le vendeur ou par un administrateur.
+- **Modération** : rien n'est en ligne avant la décision d'un administrateur ; un refus est motivé ; chaque décision est journalisée.
+- **Recherche** par marque ou modèle, catégorie, commune et budget.
+- **Messagerie interne** : acheteur et vendeur échangent sur le site, sans jamais voir les coordonnées de l'autre. Seuls les deux interlocuteurs lisent une conversation. L'e-mail de notification ne contient ni le message ni un contact.
+- **Alerte de prix** : mettre une annonce en favori, c'est suivre son prix. Une baisse est signalée dans les favoris, sur l'annonce et par e-mail.
+- **Comparaison** de deux à quatre favoris, côte à côte.
+- Signalement d'une annonce, retrait par le vendeur ou par un administrateur.
 
 Reste à faire :
 
-- Vérification d'identité du vendeur sur pièce. Aujourd'hui seul son numéro de téléphone est vérifié.
-- Modification d'une annonce déposée (le vendeur la retire et la redépose).
-- Prévenir par SMS le vendeur inscrit par téléphone ; l'e-mail part déjà.
-- Alertes de prix et comparaison d'annonces.
+- Prévenir par SMS les comptes inscrits par téléphone (nouveau message, baisse de prix, décision de modération). L'e-mail part déjà.
+- Les réponses dans une conversation apparaissent au plus tard après 15 secondes, pas instantanément.
 
 Sortie : une annonce passe de la création à la publication modérée et reçoit une demande. Vérifié en local.
 

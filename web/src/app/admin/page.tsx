@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { resolveReport } from "../actions";
+import { resolveReport, verifySeller } from "../actions";
 import { prisma } from "@/lib/db";
 import { CATEGORIES, formatNumber, formatPrice } from "@/lib/listing";
 import { contactOf, requireAdmin } from "@/lib/session";
@@ -9,13 +9,17 @@ export const instant = false;
 
 export default async function Admin() {
   await requireAdmin();
-  const [pending, reports] = await Promise.all([
+  const [identities, pending, reports] = await Promise.all([
+    prisma.sellerProfile.findMany({
+      where: { verifiedAt: null },
+      include: { user: { select: { phoneNumber: true, email: true } } },
+    }),
     prisma.listing.findMany({
       where: { status: "PENDING" },
       orderBy: { createdAt: "asc" },
       include: {
         photos: { orderBy: { position: "asc" } },
-        seller: { select: { phoneNumber: true, email: true } },
+        seller: { select: { phoneNumber: true, email: true, sellerProfile: true } },
       },
     }),
     prisma.report.findMany({
@@ -29,7 +33,30 @@ export default async function Admin() {
     <div className="section wrap medium">
       <h1 className="page-title">Modération</h1>
 
-      <h2 className="sub-title">Annonces en attente ({pending.length})</h2>
+      <h2 className="sub-title">Identités à vérifier ({identities.length})</h2>
+      {identities.length === 0 && <p className="muted">Aucune identité en attente.</p>}
+      <div className="stack">
+        {identities.map((profile) => (
+          <article key={profile.userId} className="card stack">
+            <div>
+              <h3 className="card-title">{profile.fullName}</h3>
+              <p>
+                {profile.position}, {profile.company} · {profile.yearsExperience} an(s) d&apos;expérience
+              </p>
+              {/* Matricule and contact are shown to admins only. */}
+              <p className="muted small">
+                Matricule : {profile.matricule} · Compte : {contactOf(profile.user)}
+              </p>
+            </div>
+            <form action={verifySeller}>
+              <input type="hidden" name="userId" value={profile.userId} />
+              <button className="btn btn-primary">Identité vérifiée</button>
+            </form>
+          </article>
+        ))}
+      </div>
+
+      <h2 className="sub-title spaced">Annonces en attente ({pending.length})</h2>
       {pending.length === 0 && <p className="muted">Aucune annonce à valider.</p>}
       <div className="stack">
         {pending.map((listing) => (
@@ -44,7 +71,9 @@ export default async function Admin() {
               </p>
               {/* The full VIN is shown here only: an admin needs it to check the papers. */}
               <p className="muted small">
-                Vendeur : {contactOf(listing.seller)} · VIN : {listing.vin ?? "non fourni"}
+                Vendeur : {listing.seller.sellerProfile?.fullName ?? "identité non renseignée"} (
+                {listing.seller.sellerProfile?.verifiedAt ? "vérifiée" : "non vérifiée"}) ·{" "}
+                {contactOf(listing.seller)} · VIN : {listing.vin ?? "non fourni"}
               </p>
             </div>
             <p className="description">{listing.description}</p>

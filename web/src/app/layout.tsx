@@ -29,6 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Link href="/annonces">Acheter</Link>
               <Link href="/vendre">Vendre</Link>
               <Link href="/favoris">Favoris</Link>
+              <Link href="/messages">Messages</Link>
               <Link href="/compte" className="btn btn-outline">
                 Mon compte
               </Link>
