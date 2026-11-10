@@ -19,6 +19,7 @@ export default async function Admin() {
       orderBy: { createdAt: "asc" },
       include: {
         photos: { orderBy: { position: "asc" } },
+        documents: { where: { kind: "INSURANCE" } },
         seller: { select: { phoneNumber: true, email: true, memberNumber: true, sellerProfile: true } },
       },
     }),
@@ -83,6 +84,17 @@ export default async function Admin() {
                 {contactOf(listing.seller)} · VIN : {listing.vin ?? "non fourni"}
               </p>
             </div>
+            {listing.kind === "RENT" && (
+              <p className="muted small">
+                Location : {formatPrice(listing.priceFcfa)} par jour · dépôt {formatPrice(listing.depositFcfa ?? 0)} ·{" "}
+                {listing.kmPerDay} km/jour · zone {listing.zone} · GPS {listing.gpsModel}, n° {listing.gpsSerial} ·{" "}
+                {listing.documents.map((doc) => (
+                  <a key={doc.id} href={`/documents/${doc.id}`} target="_blank">
+                    attestation d&apos;assurance
+                  </a>
+                ))}
+              </p>
+            )}
             <p className="description">{listing.description}</p>
             <div className="thumbs">
               {listing.photos.map((photo, i) => (

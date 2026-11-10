@@ -10,6 +10,7 @@ export type CardListing = {
   transmission: string;
   commune: string;
   priceFcfa: number;
+  kind: "SALE" | "RENT";
   photos: { id: string }[];
 };
 
@@ -23,6 +24,7 @@ export const cardSelect = {
   transmission: true,
   commune: true,
   priceFcfa: true,
+  kind: true,
   photos: { select: { id: true }, orderBy: { position: "asc" }, take: 1 },
 } as const;
 
@@ -31,16 +33,24 @@ export function ListingCard({ listing }: { listing: CardListing }) {
   return (
     <article className="listing-card">
       <Link href={`/annonces/${listing.id}`}>
-        {listing.photos[0] && (
-          <img src={`/photos/${listing.photos[0].id}?s`} alt="" loading="lazy" width={480} height={360} />
-        )}
+        <div className="listing-card-photo">
+          {listing.photos[0] && (
+            <img src={`/photos/${listing.photos[0].id}?s`} alt="" loading="lazy" width={480} height={360} />
+          )}
+          <span className={listing.kind === "RENT" ? "badge badge-rent" : "badge"}>
+            {listing.kind === "RENT" ? "À louer" : "À vendre"}
+          </span>
+        </div>
         <div className="listing-card-body">
           <h3>{title}</h3>
           <p className="muted">
             {formatNumber(listing.mileageKm)} km · {listing.transmission}
           </p>
           <p className="muted">{listing.commune}, Abidjan</p>
-          <p className="price">{formatPrice(listing.priceFcfa)}</p>
+          <p className="price">
+            {formatPrice(listing.priceFcfa)}
+            {listing.kind === "RENT" && " / jour"}
+          </p>
         </div>
       </Link>
     </article>

@@ -10,7 +10,7 @@ export default async function Modifier({ params }: PageProps<"/annonces/[id]/mod
   const user = await requireUser();
   const listing = await prisma.listing.findFirst({
     where: { id, sellerId: user.id },
-    include: { photos: { orderBy: { position: "asc" } } },
+    include: { photos: { orderBy: { position: "asc" } }, documents: { where: { kind: "INSURANCE" } } },
   });
   if (!listing) notFound();
 
@@ -22,7 +22,14 @@ export default async function Modifier({ params }: PageProps<"/annonces/[id]/mod
         existing={{
           id,
           photoIds: listing.photos.map((p) => p.id),
+          hasInsurance: listing.documents.length > 0,
           values: {
+            kind: listing.kind,
+            depositFcfa: listing.depositFcfa?.toString() ?? "",
+            kmPerDay: listing.kmPerDay?.toString() ?? "",
+            zone: listing.zone ?? "",
+            gpsModel: listing.gpsModel ?? "",
+            gpsSerial: listing.gpsSerial ?? "",
             category,
             brand,
             model,

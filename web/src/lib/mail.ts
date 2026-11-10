@@ -16,3 +16,12 @@ export async function sendMail(to: string, subject: string, text: string) {
   });
   return true;
 }
+
+export const siteUrl = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
+
+/**
+ * A notification that fails must not undo the action it reports. Notifications never carry
+ * the other party's contact details or a message's text: exchanges stay on the site.
+ */
+export const notify = (to: string, subject: string, text: string) =>
+  sendMail(to, subject, text).catch((e) => console.error("notification e-mail failed", e));

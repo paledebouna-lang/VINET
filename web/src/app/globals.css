@@ -395,7 +395,8 @@ a:hover {
   margin-bottom: 8px;
 }
 
-.sub-title {
+.sub-title,
+.section h2.sub-title {
   font: 600 17px var(--font-display);
   margin: 0;
 }
@@ -805,4 +806,125 @@ details summary {
   margin-bottom: 8px;
   object-fit: cover;
   border-radius: 8px;
+}
+
+/* Rentals */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.listing-card-photo {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: #dde3f1;
+}
+
+.badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-rent {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+.form-grid.two {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.field input[type="date"] {
+  min-width: 0;
+}
+
+fieldset.group {
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+fieldset.group legend {
+  padding: 0 6px;
+  font-weight: 600;
+}
+
+.plain {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+hr {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.steps li {
+  flex: 1 1 120px;
+  padding-top: 10px;
+  border-top: 3px solid var(--line-strong);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.steps li.done {
+  border-color: var(--ink);
+  color: var(--text);
+}
+
+.steps li[aria-current] {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.contract {
+  margin: 0;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--bg);
+  font: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.notice-plain {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+}
+
+.full-row {
+  flex-basis: 100%;
+}
+
+.full-row:empty {
+  display: none;
 }

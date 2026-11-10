@@ -1,11 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { type FormState, createListing, updateListing } from "../actions";
 import { FieldError } from "../field-error";
-import { CATEGORIES, COMMUNES, FUELS, TRANSMISSIONS } from "@/lib/listing";
+import { CATEGORIES, COMMUNES, FUELS, KINDS, TRANSMISSIONS } from "@/lib/listing";
 
-type Existing = { id: string; values: Record<string, string>; photoIds: string[] };
+type Existing = { id: string; values: Record<string, string>; photoIds: string[]; hasInsurance: boolean };
 
 /** Creates a listing, or edits `existing` when given. */
 export function ListingForm({ existing }: { existing?: Existing }) {
@@ -14,6 +14,8 @@ export function ListingForm({ existing }: { existing?: Existing }) {
     {},
   );
   const v = state.values ?? existing?.values ?? {};
+  const [kind, setKind] = useState(v.kind ?? "SALE");
+  const isRent = kind === "RENT";
 
   // One labelled text input wired to its server-side error.
   const input = (name: string, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
@@ -26,7 +28,16 @@ export function ListingForm({ existing }: { existing?: Existing }) {
   const select = (name: string, label: string, options: readonly (string | [string, string])[]) => (
     <div className="field">
       <label htmlFor={name}>{label}</label>
-      <select id={name} name={name} defaultValue={v[name] ?? ""} aria-describedby={`${name}-error`} required>
+      {/* The key remounts the select with the submitted choice: after a failed submit the browser
+          resets the form, and a select, unlike an input, would fall back to its very first default. */}
+      <select
+        key={v[name] ?? ""}
+        id={name}
+        name={name}
+        defaultValue={v[name] ?? ""}
+        aria-describedby={`${name}-error`}
+        required
+      >
         <option value="" disabled>
           Choisir
         </option>
@@ -46,6 +57,16 @@ export function ListingForm({ existing }: { existing?: Existing }) {
   return (
     <form action={action} className="card stack">
       {existing && <input type="hidden" name="id" value={existing.id} />}
+      <div className="field">
+        <label htmlFor="kind">Type d&apos;annonce</label>
+        <select key={kind} id="kind" name="kind" defaultValue={kind} onChange={(e) => setKind(e.target.value)}>
+          {Object.entries(KINDS).map(([value, text]) => (
+            <option key={value} value={value}>
+              {text}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="form-grid">
         {select("category", "Catégorie", Object.entries(CATEGORIES))}
         {input("brand", "Marque", { placeholder: "Toyota" })}
@@ -54,13 +75,47 @@ export function ListingForm({ existing }: { existing?: Existing }) {
         {input("mileageKm", "Kilométrage (km)", { inputMode: "numeric", placeholder: "48 000" })}
         {select("fuel", "Énergie", FUELS)}
         {select("transmission", "Boîte de vitesses", TRANSMISSIONS)}
-        {input("priceFcfa", "Prix (FCFA)", { inputMode: "numeric", placeholder: "9 800 000" })}
+        {input("priceFcfa", isRent ? "Prix par jour (FCFA)" : "Prix (FCFA)", {
+          inputMode: "numeric",
+          placeholder: isRent ? "45 000" : "9 800 000",
+        })}
         {select("commune", "Commune", COMMUNES)}
         {input("vin", "Numéro de série (VIN), facultatif", { required: false, maxLength: 17 })}
       </div>
       <p className="muted small">
         Seule la commune est affichée. Le numéro de série n&apos;apparaît jamais en entier sur l&apos;annonce.
       </p>
+
+      {isRent && (
+        <fieldset className="group">
+          <legend>Conditions de location</legend>
+          <div className="form-grid">
+            {input("depositFcfa", "Dépôt de garantie (FCFA)", { inputMode: "numeric", placeholder: "200 000" })}
+            {input("kmPerDay", "Kilomètres inclus par jour", { inputMode: "numeric", placeholder: "200" })}
+            {input("zone", "Zone de circulation autorisée", { placeholder: "Grand Abidjan" })}
+            {input("gpsModel", "GPS installé : marque et modèle")}
+            {input("gpsSerial", "GPS : numéro de série ou IMEI")}
+          </div>
+          <div className="field">
+            <label htmlFor="insurance">
+              Photo de l&apos;attestation d&apos;assurance{existing?.hasInsurance ? " (pour la remplacer)" : ""}
+            </label>
+            <input
+              id="insurance"
+              name="insurance"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              required={!existing?.hasInsurance}
+              aria-describedby="insurance-error"
+            />
+            <FieldError state={state} name="insurance" />
+          </div>
+          <p className="muted small">
+            Un véhicule ne peut être loué que s&apos;il porte un GPS installé par son propriétaire et s&apos;il est
+            assuré. Le numéro du GPS et l&apos;attestation ne sont vus que par notre équipe.
+          </p>
+        </fieldset>
+      )}
 
       <div className="field">
         <label htmlFor="description">Description</label>

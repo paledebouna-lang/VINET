@@ -71,7 +71,7 @@ export default async function Home() {
           <div className="empty">
             <p className="muted">Aucune annonce pour l&apos;instant. Soyez le premier à vendre.</p>
             <Link href="/vendre" className="btn btn-primary">
-              Déposer une annonce
+              Publier une annonce
             </Link>
           </div>
         )}

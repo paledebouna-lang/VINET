@@ -1,14 +1,19 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { toggleFavorite } from "../../actions";
 import { prisma } from "@/lib/db";
 import { CATEGORIES, formatNumber, formatPrice, maskVin } from "@/lib/listing";
 import { getUser } from "@/lib/session";
+import { BookingForm } from "../../locations/forms";
+import { formatDay, isoDay, today } from "@/lib/rental";
 import { MessageForm, ReportForm } from "./forms";
 
 export const instant = false;
 
 export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
+  // The page depends on today's date (days already booked), so it is rendered at request time.
+  await connection();
   const { id } = await params;
   const user = await getUser();
   const listing = await prisma.listing.findUnique({
@@ -18,6 +23,12 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
       seller: { select: { sellerProfile: true } },
       favorites: { where: { userId: user?.id ?? "" } },
       conversations: { where: { buyerId: user?.id ?? "" }, select: { id: true } },
+      // Days already taken, shown so that a renter picks free dates.
+      bookings: {
+        where: { status: { in: ["ACCEPTED", "SIGNED", "ACTIVE"] }, endDate: { gte: today() } },
+        orderBy: { startDate: "asc" },
+        select: { id: true, startDate: true, endDate: true },
+      },
     },
   });
   const isOwner = user?.id === listing?.sellerId;
@@ -28,6 +39,7 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
   const favorite = listing.favorites[0];
   const conversation = listing.conversations[0];
   const seller = listing.seller.sellerProfile;
+  const isRent = listing.kind === "RENT";
 
   return (
     <div className="section wrap">
@@ -45,7 +57,10 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
           <div>
             <h1 className="page-title">{title}</h1>
             <p className="muted">{listing.commune}, Abidjan · localisation approximative</p>
-            <p className="price big">{formatPrice(listing.priceFcfa)}</p>
+            <p className="price big">
+              {formatPrice(listing.priceFcfa)}
+              {isRent && " / jour"}
+            </p>
           </div>
           <dl className="specs">
             <div>
@@ -64,6 +79,22 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
               <dt>Boîte</dt>
               <dd>{listing.transmission}</dd>
             </div>
+            {isRent && (
+              <>
+                <div>
+                  <dt>Dépôt de garantie</dt>
+                  <dd>{formatPrice(listing.depositFcfa ?? 0)}</dd>
+                </div>
+                <div>
+                  <dt>Kilomètres inclus</dt>
+                  <dd>{listing.kmPerDay} km par jour</dd>
+                </div>
+                <div>
+                  <dt>Zone autorisée</dt>
+                  <dd>{listing.zone}</dd>
+                </div>
+              </>
+            )}
             {listing.vin && (
               <div>
                 <dt>Numéro de série</dt>
@@ -72,17 +103,38 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
             )}
           </dl>
           <p className="description">{listing.description}</p>
-          <p className="muted small">
-            Le transfert de propriété se fait selon la procédure officielle. MonAuto met en relation vendeur et
-            acheteur et ne le remplace pas.
-          </p>
+          {isRent ? (
+            <>
+              <p className="muted small">
+                Ce véhicule est équipé d&apos;un GPS par son propriétaire. Il est géolocalisé pendant la location,
+                avec votre accord donné avant la signature du contrat.
+              </p>
+              {listing.bookings.length > 0 && (
+                <div>
+                  <h2 className="sub-title">Déjà réservé</h2>
+                  <ul className="plain">
+                    {listing.bookings.map((b) => (
+                      <li key={b.id}>
+                        Du {formatDay(b.startDate)} au {formatDay(b.endDate)}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="muted small">
+              Le transfert de propriété se fait selon la procédure officielle. MonAuto met en relation vendeur et
+              acheteur et ne le remplace pas.
+            </p>
+          )}
         </div>
 
         <aside className="card stack">
           {/* The seller's public identity: never a phone number or an e-mail. */}
           {seller && (
             <div className="seller">
-              <p className="muted small">Vendeur</p>
+              <p className="muted small">{isRent ? "Loueur" : "Vendeur"}</p>
               <p className="card-title">{seller.fullName}</p>
               <p>
                 {seller.company
@@ -107,8 +159,15 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
             </>
           ) : listing.status !== "PUBLISHED" ? null : user ? (
             <>
+              {isRent && (
+                <>
+                  <h2 className="sub-title">Réserver ce véhicule</h2>
+                  <BookingForm listingId={listing.id} pricePerDay={listing.priceFcfa} today={isoDay(today())} />
+                  <hr />
+                </>
+              )}
               {conversation ? (
-                <Link href={`/messages/${conversation.id}`} className="btn btn-primary">
+                <Link href={`/messages/${conversation.id}`} className={isRent ? "btn btn-ghost" : "btn btn-primary"}>
                   Continuer la conversation
                 </Link>
               ) : (
@@ -129,7 +188,7 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
             </>
           ) : (
             <Link href="/connexion" className="btn btn-primary">
-              Se connecter pour écrire au vendeur
+              {isRent ? "Se connecter pour louer ce véhicule" : "Se connecter pour écrire au vendeur"}
             </Link>
           )}
         </aside>

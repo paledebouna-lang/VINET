@@ -40,6 +40,8 @@ Aucune durée n'est donnée : elles dépendent de l'équipe et des décisions de
 1. **Préparation du VPS.** Le site sera installé sur le VPS LWS existant, à côté des autres sites, comme un service séparé. Il faut connaître son système, son serveur web, son éventuel panneau de gestion et sa mémoire libre. Bloque la mise en ligne.
 2. **SMS pour les codes de connexion.** LWS vend des SMS par API, à crédits ; la couverture et le prix pour la Côte d'Ivoire sont à confirmer. Bloque la connexion par téléphone en production.
 
+4. **Paiement en ligne des locations.** Deux voies : le locataire paie toute la location en ligne, et MonAuto reverse au loueur ; ou il ne paie en ligne que les frais de service de MonAuto, le reste étant réglé au loueur au départ. La seconde évite à MonAuto de détenir l'argent d'un tiers. Il faut aussi fixer le taux de commission.
+
 ### À faire confirmer par écrit par le juriste
 
 - L'absence de formalité auprès de l'ARTCI pour la géolocalisation.
@@ -95,12 +97,28 @@ Reste à faire :
 Sortie : une annonce passe de la création à la publication modérée et reçoit une demande. Vérifié en local.
 
 ### Lot 3 — Location basique
-- Mise en location refusée sans GPS déclaré par le propriétaire et sans attestation d'assurance.
-- Calendrier, tarifs, réservation, annulation selon le droit du consommateur, dépôt de garantie, paiement par CinetPay.
-- Contrat électronique et consentement au suivi affiché avant signature.
-- AVS Rental Check : inspection photo au départ et au retour, kilométrage, carburant, clôture.
 
-Sortie : une location complète réservation → départ → retour → clôture, sans intervention technique.
+Fait, sans paiement en ligne :
+
+- **Annonce de location** : prix par jour, dépôt de garantie, kilomètres inclus, zone autorisée. Elle est refusée sans GPS déclaré (marque et numéro de série) et sans photo de l'attestation d'assurance. Le numéro du GPS et l'attestation ne sont vus que par l'équipe.
+- **Demande de réservation** par le locataire : dates, nom du conducteur, numéro et photo du permis. Le jour du départ et le jour du retour sont comptés. Les jours déjà pris sont affichés et ne peuvent pas être réservés deux fois.
+- **Réponse du loueur** : il voit le conducteur et son permis, puis accepte ou refuse.
+- **Contrat** figé à l'acceptation, signé par les deux parties. Le locataire accepte séparément la géolocalisation. Chaque signature est journalisée avec la date, l'adresse réseau et l'empreinte du texte signé.
+- **États des lieux** (AVS Rental Check) : au départ puis au retour, le loueur enregistre kilométrage, carburant, photos, remarques et remise du dépôt ; le locataire confirme. Le départ confirmé démarre la location, le retour confirmé la clôture.
+- **Bilan de clôture** : distance parcourue, dépassement des kilomètres inclus, retard.
+- **Annulation** sans frais par l'une ou l'autre partie tant que le véhicule n'est pas parti.
+- Permis, attestations et photos d'état des lieux ne sont visibles que des deux parties et de l'équipe.
+
+Reste à faire :
+
+- **Paiement en ligne par CinetPay.** Aujourd'hui le contrat prévoit que le prix et le dépôt se règlent entre loueur et locataire au départ. Il faut les identifiants CinetPay et décider ce qui se paie en ligne (voir « Reste à décider »).
+- **Contrat à faire amender par le juriste** : c'est une première version, sans barème de retard ni de frais.
+- Signature confirmée par un code à usage unique : dépend des SMS.
+- Suivi GPS réel pendant la location : lot 6. Le lot 3 enregistre le GPS déclaré et le consentement.
+- Location à l'heure, à la semaine ou au mois, avec chauffeur, prolongation : seule la location à la journée existe.
+- Attestation d'assurance et permis en PDF : seules les photos sont acceptées.
+
+Sortie : une location complète réservation → départ → retour → clôture, sans intervention technique. Vérifié en local.
 
 ### Lot 4 — Administration et support
 - Utilisateurs, rôles, modération, paiements, litiges, paramètres pays/devise.

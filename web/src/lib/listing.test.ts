@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { formatPrice, listingInput, maskContacts, maskVin, matriculeOf, sellerProfileInput } from "./listing.ts";
+import { formatPrice, listingInput, maskContacts, maskVin, matriculeOf, rentalInput, sellerProfileInput } from "./listing.ts";
 
 const valid = {
+  kind: "SALE",
   category: "VOITURE",
   brand: " Toyota ",
   model: "Corolla",
@@ -38,6 +39,17 @@ test("rejects incoherent values", () => {
   assert.equal(bad({ description: "Trop court" }), false);
   assert.equal(bad({ vin: "JTDBR32E72012345" }), false); // 16 characters
   assert.equal(bad({ vin: "JTDBR32E72012345O" }), false); // letter O
+  assert.equal(bad({ priceFcfa: "45 000" }), false); // too low for a sale
+  assert.equal(bad({ kind: "RENT", priceFcfa: "45 000" }), true); // a fair daily rate
+  assert.equal(bad({ kind: "GIFT" }), false);
+});
+
+test("requires a declared GPS for a rental offer", () => {
+  const rental = { depositFcfa: "200 000", kmPerDay: "200", zone: "Grand Abidjan", gpsModel: "Teltonika FMB920", gpsSerial: "356307042441013" };
+  assert.equal(rentalInput.parse(rental).depositFcfa, 200000);
+  assert.equal(rentalInput.safeParse({ ...rental, gpsSerial: "" }).success, false);
+  assert.equal(rentalInput.safeParse({ ...rental, gpsModel: " " }).success, false);
+  assert.equal(rentalInput.safeParse({ ...rental, zone: "" }).success, false);
 });
 
 test("masks a VIN and formats a price", () => {

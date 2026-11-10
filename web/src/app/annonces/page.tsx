@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { CATEGORIES, COMMUNES, type CategoryKey } from "@/lib/listing";
+import { CATEGORIES, COMMUNES, type CategoryKey, type KindKey } from "@/lib/listing";
 import { ListingGrid, cardSelect } from "../listing-card";
 
 export const instant = false;
@@ -11,6 +11,7 @@ export default async function Annonces({ searchParams }: PageProps<"/annonces">)
   const q = first(params.q).slice(0, 60);
   // Anything not in the lists is ignored rather than trusted.
   const category = first(params.categorie) in CATEGORIES ? (first(params.categorie) as CategoryKey) : undefined;
+  const kind = ["SALE", "RENT"].includes(first(params.type)) ? (first(params.type) as KindKey) : undefined;
   const commune = COMMUNES.find((c) => c === first(params.commune));
   const maxPrice = /^\d{1,10}$/.test(first(params.prixMax)) ? Number(first(params.prixMax)) : undefined;
 
@@ -19,6 +20,7 @@ export default async function Annonces({ searchParams }: PageProps<"/annonces">)
   const listings = await prisma.listing.findMany({
     where: {
       status: "PUBLISHED",
+      kind,
       category,
       commune,
       priceFcfa: maxPrice === undefined ? undefined : { lte: maxPrice },
@@ -36,8 +38,18 @@ export default async function Annonces({ searchParams }: PageProps<"/annonces">)
 
   return (
     <div className="section wrap">
-      <h1 className="page-title">Acheter un véhicule</h1>
+      <h1 className="page-title">
+        {kind === "RENT" ? "Louer un véhicule" : kind === "SALE" ? "Acheter un véhicule" : "Toutes les annonces"}
+      </h1>
       <form className="search card">
+        <div className="field">
+          <label htmlFor="type">Type</label>
+          <select id="type" name="type" defaultValue={kind ?? ""}>
+            <option value="">Vente et location</option>
+            <option value="SALE">À vendre</option>
+            <option value="RENT">À louer</option>
+          </select>
+        </div>
         <div className="field grow">
           <label htmlFor="q">Marque ou modèle</label>
           <input id="q" name="q" defaultValue={q} placeholder="Toyota, Hilux, MT-07…" />
@@ -63,7 +75,7 @@ export default async function Annonces({ searchParams }: PageProps<"/annonces">)
           </select>
         </div>
         <div className="field">
-          <label htmlFor="prixMax">Budget max (FCFA)</label>
+          <label htmlFor="prixMax">Prix max (FCFA)</label>
           <input id="prixMax" name="prixMax" inputMode="numeric" pattern="\d*" defaultValue={maxPrice ?? ""} />
         </div>
         <button className="btn btn-primary">Rechercher</button>

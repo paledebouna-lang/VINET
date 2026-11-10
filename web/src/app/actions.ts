@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { formatPrice, listingInput, maskContacts, sellerProfileInput } from "@/lib/listing";
-import { sendMail } from "@/lib/mail";
+import { formatPrice, listingInput, maskContacts, rentalInput, sellerProfileInput } from "@/lib/listing";
+import { notify, siteUrl as site } from "@/lib/mail";
 import { MAX_PHOTO_BYTES, MAX_PHOTOS, deletePhotos, storePhotos } from "@/lib/photos";
 import { requireAdmin, requireUser } from "@/lib/session";
 
@@ -16,7 +16,6 @@ export type FormState = {
 };
 
 const MAX_PENDING_PER_SELLER = 10;
-const site = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
 
 // Text fields only: no files, and none of React's own "$ACTION…" bookkeeping entries.
 const textFields = (formData: FormData) =>
@@ -32,12 +31,7 @@ function photoError(total: number, added: File[]) {
   if (added.some((f) => f.size > MAX_PHOTO_BYTES)) return ["Chaque photo doit peser moins de 8 Mo."];
 }
 
-const unreadablePhoto = ["Une photo est illisible. Utilisez des images JPEG, PNG ou WebP."];
-
-// A notification that fails must not undo the action it reports. E-mails never carry
-// the other party's contact details or the message text: exchanges stay on the site.
-const notify = (to: string, subject: string, text: string) =>
-  sendMail(to, subject, text).catch((e) => console.error("notification e-mail failed", e));
+const unreadableImage = ["Une image est illisible. Utilisez des fichiers JPEG, PNG ou WebP."];
 
 export async function saveSellerProfile(_prev: FormState, formData: FormData): Promise<FormState> {
   const user = await requireUser();
@@ -54,16 +48,50 @@ export async function saveSellerProfile(_prev: FormState, formData: FormData): P
   return { ok: true, values };
 }
 
+const noRental = { depositFcfa: null, kmPerDay: null, zone: null, gpsModel: null, gpsSerial: null };
+
+/** Reads and validates the listing form shared by creation and edition. */
+function readListingForm(formData: FormData, keptPhotos: number, hasInsurance: boolean) {
+  const values = textFields(formData);
+  const parsed = listingInput.safeParse(values);
+  const errors: FormState["errors"] = parsed.success ? {} : z.flattenError(parsed.error).fieldErrors;
+
+  // A rental offer needs a declared GPS and proof of insurance.
+  const isRent = values.kind === "RENT";
+  const rental = isRent ? rentalInput.safeParse(values) : null;
+  if (rental && !rental.success) Object.assign(errors, z.flattenError(rental.error).fieldErrors);
+  const file = formData.get("insurance");
+  const insurance = file instanceof File && file.size > 0 ? file : null;
+  if (isRent && !insurance && !hasInsurance) errors.insurance = ["Joignez une photo de l'attestation d'assurance."];
+  if (insurance && insurance.size > MAX_PHOTO_BYTES) errors.insurance = ["Le fichier doit peser moins de 8 Mo."];
+
+  const photos = newPhotos(formData);
+  errors.photos = photoError(keptPhotos + photos.length, photos);
+
+  const valid = parsed.success && (!rental || rental.success) && !Object.values(errors).some(Boolean);
+  return {
+    values,
+    errors,
+    photos,
+    insurance: isRent ? insurance : null,
+    isRent,
+    data: valid
+      ? {
+          ...parsed.data,
+          description: maskContacts(parsed.data.description),
+          ...(rental?.success ? rental.data : noRental),
+        }
+      : null,
+  };
+}
+
 export async function createListing(_prev: FormState, formData: FormData): Promise<FormState> {
   const user = await requireUser();
   if (!(await prisma.sellerProfile.findUnique({ where: { userId: user.id } }))) redirect("/compte/identite");
 
-  const values = textFields(formData);
-  const parsed = listingInput.safeParse(values);
-  const errors: FormState["errors"] = parsed.success ? {} : z.flattenError(parsed.error).fieldErrors;
-  const photos = newPhotos(formData);
-  errors.photos = photoError(photos.length, photos);
-  if (!parsed.success || errors.photos) return { errors, values };
+  const form = readListingForm(formData, 0, false);
+  const { values } = form;
+  if (!form.data) return { errors: form.errors, values };
 
   const pending = await prisma.listing.count({ where: { sellerId: user.id, status: "PENDING" } });
   if (pending >= MAX_PENDING_PER_SELLER) {
@@ -71,22 +99,24 @@ export async function createListing(_prev: FormState, formData: FormData): Promi
   }
 
   let photoIds: string[];
+  let insuranceIds: string[];
   try {
-    photoIds = await storePhotos(photos);
+    photoIds = await storePhotos(form.photos);
+    insuranceIds = await storePhotos(form.insurance ? [form.insurance] : []);
   } catch {
-    return { errors: { photos: unreadablePhoto }, values };
+    return { errors: { photos: unreadableImage }, values };
   }
   try {
     await prisma.listing.create({
       data: {
-        ...parsed.data,
-        description: maskContacts(parsed.data.description),
+        ...form.data,
         sellerId: user.id,
         photos: { create: photoIds.map((id, position) => ({ id, position })) },
+        documents: { create: insuranceIds.map((id) => ({ id, kind: "INSURANCE" as const })) },
       },
     });
   } catch (e) {
-    await deletePhotos(photoIds);
+    await deletePhotos([...photoIds, ...insuranceIds]);
     throw e;
   }
   redirect("/mes-annonces");
@@ -98,48 +128,50 @@ export async function updateListing(_prev: FormState, formData: FormData): Promi
   const id = String(formData.get("id"));
   const listing = await prisma.listing.findFirst({
     where: { id, sellerId: user.id },
-    include: { photos: { orderBy: { position: "asc" } } },
+    include: { photos: { orderBy: { position: "asc" } }, documents: { where: { kind: "INSURANCE" } } },
   });
   if (!listing) return { errors: { form: ["Cette annonce est introuvable."] } };
 
-  const values = textFields(formData);
-  const parsed = listingInput.safeParse(values);
-  const errors: FormState["errors"] = parsed.success ? {} : z.flattenError(parsed.error).fieldErrors;
   const keep = new Set(formData.getAll("keep").map(String));
   const kept = listing.photos.filter((p) => keep.has(p.id));
   const removed = listing.photos.filter((p) => !keep.has(p.id)).map((p) => p.id);
-  const added = newPhotos(formData);
-  errors.photos = photoError(kept.length + added.length, added);
-  if (!parsed.success || errors.photos) return { errors, values };
+  const form = readListingForm(formData, kept.length, listing.documents.length > 0);
+  const { values } = form;
+  if (!form.data) return { errors: form.errors, values };
 
+  // A new attestation replaces the old one; a listing switched to a sale drops it.
+  const oldInsurance = form.insurance || !form.isRent ? listing.documents.map((d) => d.id) : [];
   let addedIds: string[];
+  let insuranceIds: string[];
   try {
-    addedIds = await storePhotos(added);
+    addedIds = await storePhotos(form.photos);
+    insuranceIds = await storePhotos(form.insurance ? [form.insurance] : []);
   } catch {
-    return { errors: { photos: unreadablePhoto }, values };
+    return { errors: { photos: unreadableImage }, values };
   }
   try {
     await prisma.$transaction([
       prisma.listingPhoto.deleteMany({ where: { id: { in: removed } } }),
+      prisma.document.deleteMany({ where: { id: { in: oldInsurance } } }),
       ...kept.map((p, position) => prisma.listingPhoto.update({ where: { id: p.id }, data: { position } })),
       prisma.listing.update({
         where: { id },
         data: {
-          ...parsed.data,
-          description: maskContacts(parsed.data.description),
+          ...form.data,
           status: "PENDING",
           rejectionReason: null,
           // Remembered across several edits until one is published.
           previousPriceFcfa: listing.previousPriceFcfa ?? listing.priceFcfa,
           photos: { create: addedIds.map((pid, i) => ({ id: pid, position: kept.length + i })) },
+          documents: { create: insuranceIds.map((did) => ({ id: did, kind: "INSURANCE" as const })) },
         },
       }),
     ]);
   } catch (e) {
-    await deletePhotos(addedIds);
+    await deletePhotos([...addedIds, ...insuranceIds]);
     throw e;
   }
-  await deletePhotos(removed);
+  await deletePhotos([...removed, ...oldInsurance]);
   redirect("/mes-annonces");
 }
 

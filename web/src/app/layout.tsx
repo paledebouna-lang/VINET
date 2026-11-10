@@ -26,8 +26,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               MonAuto
             </Link>
             <nav aria-label="Navigation principale" className="site-nav">
-              <Link href="/annonces">Acheter</Link>
-              <Link href="/vendre">Vendre</Link>
+              <Link href="/annonces?type=SALE">Acheter</Link>
+              <Link href="/annonces?type=RENT">Louer</Link>
+              <Link href="/vendre">Publier</Link>
               <Link href="/favoris">Favoris</Link>
               <Link href="/messages">Messages</Link>
               <Link href="/compte" className="btn btn-outline">

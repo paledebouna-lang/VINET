@@ -11,7 +11,7 @@ export function MessageForm({ listingId }: { listingId: string }) {
     <form action={action} className="stack">
       <input type="hidden" name="listingId" value={listingId} />
       <div className="field">
-        <label htmlFor="body">Votre message au vendeur</label>
+        <label htmlFor="body">Votre message</label>
         <textarea
           id="body"
           name="body"
@@ -27,7 +27,7 @@ export function MessageForm({ listingId }: { listingId: string }) {
         </small>
       </div>
       <button className="btn btn-primary" disabled={pending}>
-        Écrire au vendeur
+        Envoyer le message
       </button>
     </form>
   );

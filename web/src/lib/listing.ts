@@ -38,7 +38,14 @@ const int = (min: number, max: number, message: string) =>
     .transform(Number)
     .pipe(z.number().min(min, message).max(max, message));
 
-export const listingInput = z.object({
+export const KINDS = { SALE: "Vente", RENT: "Location" } as const;
+export type KindKey = keyof typeof KINDS;
+
+const SALE_MIN_PRICE = 50_000;
+
+export const listingInput = z
+  .object({
+  kind: z.enum(["SALE", "RENT"], choose),
   category: z.enum(["VOITURE", "MOTO", "UTILITAIRE"], choose),
   brand: text(40),
   model: text(60),
@@ -46,7 +53,8 @@ export const listingInput = z.object({
   mileageKm: int(0, 2_000_000, "Kilométrage invalide."),
   fuel: z.enum(FUELS, choose),
   transmission: z.enum(TRANSMISSIONS, choose),
-  priceFcfa: int(50_000, 2_000_000_000, "Le prix doit être compris entre 50 000 et 2 000 000 000 FCFA."),
+  // A sale price or, for a rental, the price per day.
+  priceFcfa: int(1_000, 2_000_000_000, "Le prix doit être compris entre 1 000 et 2 000 000 000 FCFA."),
   commune: z.enum(COMMUNES, choose),
   description: z
     .string()
@@ -60,6 +68,20 @@ export const listingInput = z.object({
     .toUpperCase()
     .regex(/^([A-HJ-NPR-Z0-9]{17})?$/, "Un numéro de série (VIN) compte 17 caractères, sans I, O ni Q.")
     .transform((v) => v || null),
+  })
+  .superRefine((v, ctx) => {
+    if (v.kind === "SALE" && v.priceFcfa < SALE_MIN_PRICE) {
+      ctx.addIssue({ code: "custom", path: ["priceFcfa"], message: "Un prix de vente commence à 50 000 FCFA." });
+    }
+  });
+
+/** What a rental offer adds. Without a declared GPS, a vehicle cannot be put up for rent. */
+export const rentalInput = z.object({
+  depositFcfa: int(0, 50_000_000, "Dépôt de garantie invalide."),
+  kmPerDay: int(1, 2_000, "Entre 1 et 2 000 km par jour."),
+  zone: text(80),
+  gpsModel: text(60),
+  gpsSerial: z.string().trim().min(5, "Indiquez le numéro de série ou l'IMEI du GPS.").max(40, "40 caractères au maximum."),
 });
 
 // An empty optional field is stored as null, not as an empty string.

@@ -43,6 +43,7 @@ model User {
   conversations       Conversation[]
   messages            Message[]
   sellerProfile       SellerProfile?
+  bookings            Booking[]
   favorites           Favorite[]
   reports             Report[]
 
@@ -137,6 +138,16 @@ model Listing {
   priceFcfa         Int
   // The price before the seller's last edit, kept until that edit is published and watchers are told.
   previousPriceFcfa Int?
+  kind              ListingKind    @default(SALE)
+  // Rental offers only. For a rental, priceFcfa is the price per day.
+  depositFcfa       Int?
+  kmPerDay          Int?
+  zone              String?
+  // A rental vehicle must carry a GPS fitted by its owner; the serial is never public.
+  gpsModel          String?
+  gpsSerial         String?
+  documents         Document[]
+  bookings          Booking[]
   commune           String
   description       String
   // Never shown in full to the public: see maskVin.
@@ -238,4 +249,101 @@ model Report {
 
   @@unique([listingId, reporterId])
   @@map("report")
+}
+
+enum ListingKind {
+  SALE
+  RENT
+}
+
+enum BookingStatus {
+  REQUESTED
+  DECLINED
+  ACCEPTED
+  SIGNED
+  ACTIVE
+  CLOSED
+  CANCELLED
+}
+
+model Booking {
+  id                String        @id @default(cuid())
+  listingId         String
+  listing           Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  renterId          String
+  renter            User          @relation(fields: [renterId], references: [id], onDelete: Cascade)
+  status            BookingStatus @default(REQUESTED)
+  // Both days are part of the rental: 10 to 12 is three days.
+  startDate         DateTime      @db.Date
+  endDate           DateTime      @db.Date
+  days              Int
+  // Copied from the listing at request time, so a later edit cannot change an agreed price.
+  pricePerDayFcfa   Int
+  totalFcfa         Int
+  depositFcfa       Int
+  renterFullName    String
+  licenceNumber     String
+  // Frozen when the owner accepts; the hash proves what each side signed.
+  contractText      String?
+  contractHash      String?
+  ownerSignedAt     DateTime?
+  renterSignedAt    DateTime?
+  // The renter's separate consent to GPS tracking for the duration of the rental.
+  trackingConsentAt DateTime?
+  createdAt         DateTime      @default(now())
+  closedAt          DateTime?
+  documents         Document[]
+  inspections       Inspection[]
+
+  @@index([listingId, status])
+  @@index([renterId])
+  @@map("booking")
+}
+
+enum InspectionPhase {
+  DEPARTURE
+  RETURN
+}
+
+// AVS Rental Check: recorded by the owner, confirmed by the renter.
+model Inspection {
+  id          String          @id @default(cuid())
+  bookingId   String
+  booking     Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  phase       InspectionPhase
+  mileageKm   Int
+  fuelPercent Int
+  notes       String?
+  // Departure: deposit received. Return: deposit handed back.
+  depositDone Boolean
+  createdAt   DateTime        @default(now())
+  confirmedAt DateTime?
+  documents   Document[]
+
+  @@unique([bookingId, phase])
+  @@map("inspection")
+}
+
+enum DocumentKind {
+  INSURANCE
+  LICENCE
+  INSPECTION
+}
+
+// Private images, never served publicly: see /documents/[id]. Files live in UPLOAD_DIR like photos.
+model Document {
+  id           String       @id
+  kind         DocumentKind
+  listingId    String?
+  listing      Listing?     @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  bookingId    String?
+  booking      Booking?     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  inspectionId String?
+  inspection   Inspection?  @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  position     Int          @default(0)
+
+  @@index([listingId])
+  @@index([bookingId])
+  @@index([inspectionId])
+  @@map("document")
 }
