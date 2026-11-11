@@ -7,9 +7,12 @@ import { normalizeCiPhone } from "@/lib/phone";
 
 type Channel = "phone" | "email";
 
+// In production, sign-in by phone needs an SMS provider; until one is wired, only e-mail is offered.
+const smsEnabled = process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_SMS_ENABLED === "1";
+
 export default function Connexion() {
   const router = useRouter();
-  const [channel, setChannel] = useState<Channel>("phone");
+  const [channel, setChannel] = useState<Channel>(smsEnabled ? "phone" : "email");
   const [input, setInput] = useState("");
   // Set once a code has been sent: the normalized phone number or e-mail it went to.
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -102,14 +105,16 @@ export default function Connexion() {
           </form>
         ) : (
           <>
-            <div className="tabs" role="group" aria-label="Moyen de connexion">
-              <button type="button" aria-pressed={channel === "phone"} onClick={() => reset("phone")}>
-                Téléphone
-              </button>
-              <button type="button" aria-pressed={channel === "email"} onClick={() => reset("email")}>
-                E-mail
-              </button>
-            </div>
+            {smsEnabled && (
+              <div className="tabs" role="group" aria-label="Moyen de connexion">
+                <button type="button" aria-pressed={channel === "phone"} onClick={() => reset("phone")}>
+                  Téléphone
+                </button>
+                <button type="button" aria-pressed={channel === "email"} onClick={() => reset("email")}>
+                  E-mail
+                </button>
+              </div>
+            )}
             <form className="stack" onSubmit={sendCode}>
               <div className="field">
                 <label htmlFor="identifiant">
