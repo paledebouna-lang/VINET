@@ -40,7 +40,9 @@ test("the identity key is sealed, and tampering is detected", () => {
   assert.ok(!sealed.includes(ik.toString("base64url")));
   assert.deepEqual(openKey(sealed), ik);
   const [iv, tag, data] = sealed.split(".");
-  assert.throws(() => openKey([iv, tag, data.slice(0, -2) + (data.endsWith("A") ? "BA" : "AA")].join(".")));
+  const flipped = Buffer.from(data, "base64url");
+  flipped[0] ^= 1;
+  assert.throws(() => openKey([iv, tag, flipped.toString("base64url")].join(".")));
 });
 
 test("registration input", () => {

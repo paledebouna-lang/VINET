@@ -237,7 +237,22 @@ Reste à faire :
 Sortie : une dernière détection apparaît sur la carte avec rayon et qualité. Vérifié en local de bout en bout (33 contrôles) avec un détecteur simulé et des identifiants calculés par l'implémentation de référence ; pas encore avec une balise réelle.
 
 ### Lot 9 — Pilote Côte d'Ivoire
-Agences sélectionnées, véhicules volontaires, procédures de vol, support, mesure.
+
+Fait :
+
+- **Plan du pilote et procédures**, dans un document partagé que l'équipe et le juriste peuvent modifier : objet et chiffres proposés, sélection des agences, véhicules volontaires et accord des propriétaires, procédure vol pour l'équipe (avec son schéma), support et litiges, indicateurs et cibles proposées, liste de ce qui bloque avant le lancement.
+- **Page Pilote** dans l'administration (`/admin/pilote`) : indicateurs depuis une date choisie (90 derniers jours par défaut). Activité, délai de modération, réponses sous 24 h, locations signées et terminées avec leurs états des lieux, support, passeports vérifiés, balises GPS qui transmettent, signalements, détections VINET, dossiers de vol et délai de confirmation. Elle compte aussi les consultations de positions par l'équipe hors d'un dossier de vol confirmé, qui doivent rester à zéro.
+- Une annonce modifiée garde sa date de soumission à la modération, pour que le délai de modération soit juste.
+
+Reste à faire, avant le lancement (le détail est dans le plan du pilote) :
+
+- **Mettre le site en ligne** sur le VPS : il faut le système, le serveur web ou le panneau de contrôle, la mémoire libre et un accès. Puis installation, sauvegardes, HTTPS et la tâche planifiée qui supprime les anciennes données.
+- Décider de la **double vérification** des comptes administrateur et agence (recommandée).
+- Choisir la **balise GPS** réelle et le **fournisseur de fonds de carte**.
+- Faire relire par le juriste le contrat de location, les engagements de vol, la lettre d'engagement des agences et l'accord des propriétaires.
+- Valider les chiffres et les cibles du plan, choisir les agences, former l'équipe.
+
+Sortie : le pilote peut démarrer dès que le site est en ligne et que les blocages listés sont levés ; ses résultats se lisent sur la page Pilote.
 
 ### Lot 10 — Extension
 Nouveaux pays et devises, bateaux et avions (opérateurs agréés), enchères, assurance et financement partenaires, pièces, IA.

@@ -169,6 +169,7 @@ export async function updateListing(_prev: FormState, formData: FormData): Promi
           ...form.data,
           vehicleId,
           status: "PENDING",
+          submittedAt: new Date(),
           rejectionReason: null,
           // Remembered across several edits until one is published.
           previousPriceFcfa: listing.previousPriceFcfa ?? listing.priceFcfa,

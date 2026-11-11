@@ -165,6 +165,8 @@ model Listing {
   rejectionReason   String?
   createdAt         DateTime       @default(now())
   publishedAt       DateTime?
+  // Last time the listing went to moderation: its creation, or its last edit.
+  submittedAt       DateTime       @default(now())
   photos            ListingPhoto[]
   conversations     Conversation[]
   favorites         Favorite[]
