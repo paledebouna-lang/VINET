@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { formatPrice, listingInput, maskContacts, rentalInput, sellerProfileInput } from "@/lib/listing";
+import { formatPrice, listingTitle, maskContacts, parseListing, rentalInput, sellerProfileInput } from "@/lib/listing";
 import { notify, siteUrl as site } from "@/lib/mail";
 import { MAX_PHOTO_BYTES, MAX_PHOTOS, deletePhotos, storePhotos } from "@/lib/photos";
 import { requireAdmin, requireUser } from "@/lib/session";
@@ -49,8 +49,9 @@ export async function saveSellerProfile(_prev: FormState, formData: FormData): P
 }
 
 /** The passport chosen in the form, if it really is one of this seller's vehicles. */
-async function ownVehicleId(vehicleId: string | undefined, userId: string) {
-  if (!vehicleId) return null;
+async function ownVehicleId(values: Record<string, string>, userId: string) {
+  const { vehicleId } = values;
+  if (!vehicleId || values.category === "PIECE") return null;
   const vehicle = await prisma.vehicle.findFirst({ where: { id: vehicleId, ownerId: userId }, select: { id: true } });
   return vehicle?.id ?? null;
 }
@@ -60,8 +61,8 @@ const noRental = { depositFcfa: null, kmPerDay: null, zone: null, gpsModel: null
 /** Reads and validates the listing form shared by creation and edition. */
 function readListingForm(formData: FormData, keptPhotos: number, hasInsurance: boolean) {
   const values = textFields(formData);
-  const parsed = listingInput.safeParse(values);
-  const errors: FormState["errors"] = parsed.success ? {} : z.flattenError(parsed.error).fieldErrors;
+  const parsed = parseListing(values);
+  const errors: FormState["errors"] = { ...parsed.errors };
 
   // A rental offer needs a declared GPS and proof of insurance.
   const isRent = values.kind === "RENT";
@@ -75,7 +76,7 @@ function readListingForm(formData: FormData, keptPhotos: number, hasInsurance: b
   const photos = newPhotos(formData);
   errors.photos = photoError(keptPhotos + photos.length, photos);
 
-  const valid = parsed.success && (!rental || rental.success) && !Object.values(errors).some(Boolean);
+  const valid = parsed.data && (!rental || rental.success) && !Object.values(errors).some(Boolean);
   return {
     values,
     errors,
@@ -84,8 +85,12 @@ function readListingForm(formData: FormData, keptPhotos: number, hasInsurance: b
     isRent,
     data: valid
       ? {
-          ...parsed.data,
-          description: maskContacts(parsed.data.description),
+          ...parsed.data!,
+          // Contact details stay off the site, in titles as in descriptions.
+          brand: maskContacts(parsed.data!.brand),
+          model: maskContacts(parsed.data!.model),
+          partName: parsed.data!.partName && maskContacts(parsed.data!.partName),
+          description: maskContacts(parsed.data!.description),
           ...(rental?.success ? rental.data : noRental),
         }
       : null,
@@ -117,7 +122,7 @@ export async function createListing(_prev: FormState, formData: FormData): Promi
     await prisma.listing.create({
       data: {
         ...form.data,
-        vehicleId: await ownVehicleId(values.vehicleId, user.id),
+        vehicleId: await ownVehicleId(values, user.id),
         sellerId: user.id,
         photos: { create: photoIds.map((id, position) => ({ id, position })) },
         documents: { create: insuranceIds.map((id) => ({ id, kind: "INSURANCE" as const })) },
@@ -147,7 +152,7 @@ export async function updateListing(_prev: FormState, formData: FormData): Promi
   const { values } = form;
   if (!form.data) return { errors: form.errors, values };
 
-  const vehicleId = await ownVehicleId(values.vehicleId, user.id);
+  const vehicleId = await ownVehicleId(values, user.id);
   // A new attestation replaces the old one; a listing switched to a sale drops it.
   const oldInsurance = form.insurance || !form.isRent ? listing.documents.map((d) => d.id) : [];
   let addedIds: string[];
@@ -222,7 +227,7 @@ export async function moderateListing(_prev: FormState, formData: FormData): Pro
     await prisma.auditLog.create({
       data: { action: publish ? "listing.published" : "listing.rejected", actorId: admin.id, target: id },
     });
-    const title = `${before.brand} ${before.model}`;
+    const title = listingTitle(before);
     await notify(
       before.seller.email,
       publish ? `Votre annonce ${title} est en ligne` : `Votre annonce ${title} n'a pas été publiée`,
@@ -312,7 +317,7 @@ export async function sendMessage(_prev: FormState, formData: FormData): Promise
   const { listing } = conversation;
   await notify(
     (isBuyer ? listing.seller : conversation.buyer).email,
-    `Nouveau message à propos de ${listing.brand} ${listing.model}`,
+    `Nouveau message à propos de ${listingTitle(listing)}`,
     `Vous avez reçu un message sur MonAuto. Lisez-le et répondez ici : ${site}/messages/${conversation.id}`,
   );
   if (!conversationId) redirect(`/messages/${conversation.id}`);

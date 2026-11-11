@@ -5,7 +5,7 @@ import { type FormState, reportListing, sendMessage } from "../../actions";
 import { FieldError } from "../../field-error";
 
 /** Opens the conversation with the seller; on success the server redirects to it. */
-export function MessageForm({ listingId }: { listingId: string }) {
+export function MessageForm({ listingId, isPart = false }: { listingId: string; isPart?: boolean }) {
   const [state, action, pending] = useActionState<FormState, FormData>(sendMessage, {});
   return (
     <form action={action} className="stack">
@@ -18,7 +18,11 @@ export function MessageForm({ listingId }: { listingId: string }) {
           rows={4}
           required
           aria-describedby="body-error"
-          placeholder="Bonjour, votre véhicule m'intéresse. Est-il toujours disponible ?"
+          placeholder={
+            isPart
+              ? "Bonjour, cette pièce m'intéresse. Est-elle toujours disponible ?"
+              : "Bonjour, votre véhicule m'intéresse. Est-il toujours disponible ?"
+          }
         />
         <FieldError state={state} name="body" />
         <small>

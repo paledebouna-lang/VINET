@@ -1,14 +1,18 @@
 import { z } from "zod";
 
-export const CATEGORIES = {
+// What an AVS passport can describe.
+export const VEHICLE_CATEGORIES = {
   VOITURE: "Voiture",
   MOTO: "Moto ou scooter",
   UTILITAIRE: "Utilitaire",
 } as const;
+// What a listing can offer: a vehicle, or a spare part.
+export const CATEGORIES = { ...VEHICLE_CATEGORIES, PIECE: "Pièce détachée" } as const;
 export type CategoryKey = keyof typeof CATEGORIES;
 
 export const FUELS = ["Essence", "Diesel", "Hybride", "Électrique"] as const;
 export const TRANSMISSIONS = ["Manuelle", "Automatique"] as const;
+export const PART_CONDITIONS = ["Neuve", "Occasion", "Reconditionnée"] as const;
 // The public location of a listing is the commune only, never an address.
 export const COMMUNES = [
   "Abobo",
@@ -43,24 +47,27 @@ export type KindKey = keyof typeof KINDS;
 
 const SALE_MIN_PRICE = 50_000;
 
-export const listingInput = z
-  .object({
+// Fields every listing has.
+const listingBase = z.object({
   kind: z.enum(["SALE", "RENT"], choose),
-  category: z.enum(["VOITURE", "MOTO", "UTILITAIRE"], choose),
+  category: z.enum(["VOITURE", "MOTO", "UTILITAIRE", "PIECE"], choose),
   brand: text(40),
   model: text(60),
-  year: int(1950, new Date().getFullYear() + 1, "Année invalide."),
-  mileageKm: int(0, 2_000_000, "Kilométrage invalide."),
-  fuel: z.enum(FUELS, choose),
-  transmission: z.enum(TRANSMISSIONS, choose),
   // A sale price or, for a rental, the price per day.
   priceFcfa: int(1_000, 2_000_000_000, "Le prix doit être compris entre 1 000 et 2 000 000 000 FCFA."),
   commune: z.enum(COMMUNES, choose),
   description: z
     .string()
     .trim()
-    .min(20, "Décrivez le véhicule en 20 caractères au moins.")
+    .min(20, "Décrivez l'annonce en 20 caractères au moins.")
     .max(4000, "4000 caractères au maximum."),
+});
+
+const vehicleFields = z.object({
+  year: int(1950, new Date().getFullYear() + 1, "Année invalide."),
+  mileageKm: int(0, 2_000_000, "Kilométrage invalide."),
+  fuel: z.enum(FUELS, choose),
+  transmission: z.enum(TRANSMISSIONS, choose),
   // 17 characters, never I, O or Q. Optional: an empty field means "not given".
   vin: z
     .string()
@@ -68,12 +75,66 @@ export const listingInput = z
     .toUpperCase()
     .regex(/^([A-HJ-NPR-Z0-9]{17})?$/, "Un numéro de série (VIN) compte 17 caractères, sans I, O ni Q.")
     .transform((v) => v || null),
-  })
-  .superRefine((v, ctx) => {
-    if (v.kind === "SALE" && v.priceFcfa < SALE_MIN_PRICE) {
-      ctx.addIssue({ code: "custom", path: ["priceFcfa"], message: "Un prix de vente commence à 50 000 FCFA." });
-    }
-  });
+});
+
+const partFields = z.object({
+  partName: z.string().trim().min(3, "Nommez la pièce : phare avant gauche, alternateur…").max(80, "80 caractères au maximum."),
+  partCondition: z.enum(PART_CONDITIONS, choose),
+  partReference: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .max(40, "40 caractères au maximum.")
+    .transform((v) => v || null),
+});
+
+const noVehicle = { year: null, mileageKm: null, fuel: null, transmission: null, vin: null };
+const noPart = { partName: null, partCondition: null, partReference: null };
+
+type Errors = Record<string, string[] | undefined>;
+export type ListingData = z.infer<typeof listingBase> & {
+  year: number | null;
+  mileageKm: number | null;
+  fuel: string | null;
+  transmission: string | null;
+  vin: string | null;
+  partName: string | null;
+  partCondition: string | null;
+  partReference: string | null;
+};
+
+/**
+ * Validates the listing form. A vehicle needs its year, mileage, energy and gearbox; a spare part
+ * needs its name and condition instead, and is only ever sold.
+ */
+export function parseListing(values: Record<string, string | undefined>): { data?: ListingData; errors?: Errors } {
+  const base = listingBase.safeParse(values);
+  const isPart = values.category === "PIECE";
+  const part = isPart ? partFields.safeParse(values) : null;
+  const vehicle = isPart ? null : vehicleFields.safeParse(values);
+  const errors: Errors = {
+    ...(base.success ? {} : z.flattenError(base.error).fieldErrors),
+    ...(part && !part.success ? z.flattenError(part.error).fieldErrors : {}),
+    ...(vehicle && !vehicle.success ? z.flattenError(vehicle.error).fieldErrors : {}),
+  };
+  if (isPart && values.kind === "RENT") errors.kind = ["Une pièce détachée se vend, elle ne se loue pas."];
+  if (!isPart && values.kind === "SALE" && base.success && base.data.priceFcfa < SALE_MIN_PRICE) {
+    errors.priceFcfa = ["Un prix de vente commence à 50 000 FCFA."];
+  }
+  if (!base.success || Object.keys(errors).length) return { errors };
+  if (part?.success) return { data: { ...base.data, ...noVehicle, ...part.data } };
+  if (vehicle?.success) return { data: { ...base.data, ...noPart, ...vehicle.data } };
+  return { errors };
+}
+
+// The fields listingTitle needs, for a Prisma select.
+export const titleSelect = { category: true, brand: true, model: true, year: true, partName: true } as const;
+
+type Titled = { category: string; brand: string; model: string; year: number | null; partName: string | null };
+
+/** How a listing is named everywhere: "Toyota Corolla 2020", or "Phare avant gauche pour Toyota Corolla". */
+export const listingTitle = (l: Titled) =>
+  l.category === "PIECE" ? `${l.partName} pour ${l.brand} ${l.model}` : `${l.brand} ${l.model} ${l.year ?? ""}`.trim();
 
 /** What a rental offer adds. Without a declared GPS, a vehicle cannot be put up for rent. */
 export const rentalInput = z.object({

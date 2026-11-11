@@ -255,7 +255,23 @@ Reste à faire, avant le lancement (le détail est dans le plan du pilote) :
 Sortie : le pilote peut démarrer dès que le site est en ligne et que les blocages listés sont levés ; ses résultats se lisent sur la page Pilote.
 
 ### Lot 10 — Extension
-Nouveaux pays et devises, bateaux et avions (opérateurs agréés), enchères, assurance et financement partenaires, pièces, IA.
+
+Six projets indépendants, menés un par un à la demande, après le bilan du pilote quand ils en dépendent.
+
+**Pièces détachées — fait.**
+
+- Nouvelle catégorie « Pièce détachée » dans les annonces, en vente seulement. Elle a ses propres champs : désignation, état (neuve, occasion, reconditionnée), véhicules compatibles et référence constructeur facultative. L'année, le kilométrage, l'énergie, la boîte, le numéro de série et le passeport AVS ne s'y appliquent pas.
+- Elle profite de tout ce qui existe : modération, messagerie interne, favoris et alertes de baisse de prix, comparaison, signalement. Lien « Pièces » dans le menu, recherche par nom de pièce ou par référence.
+- Les numéros de téléphone et les e-mails sont aussi masqués dans le titre d'une annonce (marque, modèle, nom de la pièce), plus seulement dans sa description.
+- Reste à décider : faut-il un prix minimum, des catégories de pièces (carrosserie, moteur, pneus…) ou une garantie du vendeur ?
+
+**À faire, chacun sur décision :**
+
+- Nouveaux pays et devises : quel pays, sa devise, ses villes, ses numéros de téléphone.
+- Bateaux et avions : seulement avec des opérateurs agréés ; règles à établir avec le juriste.
+- Enchères : règles (durée, dépôt, paiement) et avis du juriste sur la réglementation des enchères en Côte d'Ivoire.
+- Assurance et financement : partenaires à choisir.
+- IA : usage à préciser (aide à la rédaction des annonces, estimation de prix, détection d'annonces frauduleuses).
 
 ## 4. Règles valables pour tous les lots
 

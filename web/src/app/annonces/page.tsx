@@ -15,7 +15,7 @@ export default async function Annonces({ searchParams }: PageProps<"/annonces">)
   const commune = COMMUNES.find((c) => c === first(params.commune));
   const maxPrice = /^\d{1,10}$/.test(first(params.prixMax)) ? Number(first(params.prixMax)) : undefined;
 
-  // shortcut: substring match on brand and model; move to full-text search past a few thousand listings.
+  // shortcut: substring match on brand, model and part name or reference; move to full-text search past a few thousand listings.
   const words = q.split(/\s+/).filter(Boolean);
   const listings = await prisma.listing.findMany({
     where: {
@@ -28,6 +28,8 @@ export default async function Annonces({ searchParams }: PageProps<"/annonces">)
         OR: [
           { brand: { contains: word, mode: "insensitive" as const } },
           { model: { contains: word, mode: "insensitive" as const } },
+          { partName: { contains: word, mode: "insensitive" as const } },
+          { partReference: { contains: word, mode: "insensitive" as const } },
         ],
       })),
     },
@@ -39,7 +41,13 @@ export default async function Annonces({ searchParams }: PageProps<"/annonces">)
   return (
     <div className="section wrap">
       <h1 className="page-title">
-        {kind === "RENT" ? "Louer un véhicule" : kind === "SALE" ? "Acheter un véhicule" : "Toutes les annonces"}
+        {category === "PIECE"
+          ? "Pièces détachées"
+          : kind === "RENT"
+            ? "Louer un véhicule"
+            : kind === "SALE"
+              ? "Acheter un véhicule"
+              : "Toutes les annonces"}
       </h1>
       <form className="search card">
         <div className="field">
@@ -51,8 +59,8 @@ export default async function Annonces({ searchParams }: PageProps<"/annonces">)
           </select>
         </div>
         <div className="field grow">
-          <label htmlFor="q">Marque ou modèle</label>
-          <input id="q" name="q" defaultValue={q} placeholder="Toyota, Hilux, MT-07…" />
+          <label htmlFor="q">Marque, modèle, pièce ou référence</label>
+          <input id="q" name="q" defaultValue={q} placeholder="Toyota, Hilux, alternateur…" />
         </div>
         <div className="field">
           <label htmlFor="categorie">Catégorie</label>

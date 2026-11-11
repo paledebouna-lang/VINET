@@ -16,6 +16,7 @@ export default async function Modifier({ params }: PageProps<"/annonces/[id]/mod
   const vehicles = await prisma.vehicle.findMany({ where: { ownerId: user.id }, orderBy: { createdAt: "desc" } });
 
   const { category, brand, model, year, mileageKm, fuel, transmission, priceFcfa, commune, description, vin } = listing;
+  const { partName, partCondition, partReference } = listing;
   return (
     <div className="section wrap medium">
       <h1 className="page-title">Modifier mon annonce</h1>
@@ -36,10 +37,13 @@ export default async function Modifier({ params }: PageProps<"/annonces/[id]/mod
             category,
             brand,
             model,
-            year: String(year),
-            mileageKm: String(mileageKm),
-            fuel,
-            transmission,
+            year: year?.toString() ?? "",
+            mileageKm: mileageKm?.toString() ?? "",
+            fuel: fuel ?? "",
+            transmission: transmission ?? "",
+            partName: partName ?? "",
+            partCondition: partCondition ?? "",
+            partReference: partReference ?? "",
             priceFcfa: String(priceFcfa),
             commune,
             description,

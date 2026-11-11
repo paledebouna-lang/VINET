@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { CATEGORIES, formatNumber, formatPrice } from "@/lib/listing";
+import { CATEGORIES, formatNumber, formatPrice, listingTitle } from "@/lib/listing";
 
 export const instant = false;
 
@@ -29,8 +29,10 @@ export default async function Comparer({ searchParams }: PageProps<"/comparer">)
   }
 
   const cheapest = Math.min(...listings.map((l) => l.priceFcfa));
-  const lowestKm = Math.min(...listings.map((l) => l.mileageKm));
-  const newest = Math.max(...listings.map((l) => l.year));
+  // Parts have neither mileage nor year: they are left out of those two "best" marks.
+  const lowestKm = Math.min(...listings.flatMap((l) => (l.mileageKm === null ? [] : [l.mileageKm])));
+  const newest = Math.max(...listings.flatMap((l) => (l.year === null ? [] : [l.year])));
+  const dash = "—";
   // The best value of a row is marked in words as well as in bold, so it does not rely on styling.
   const best = (isBest: boolean, text: string, label: string) =>
     isBest ? (
@@ -43,11 +45,15 @@ export default async function Comparer({ searchParams }: PageProps<"/comparer">)
 
   const rows: [string, (l: (typeof listings)[number]) => React.ReactNode][] = [
     ["Prix", (l) => best(l.priceFcfa === cheapest, formatPrice(l.priceFcfa), "le moins cher")],
-    ["Année", (l) => best(l.year === newest, String(l.year), "le plus récent")],
-    ["Kilométrage", (l) => best(l.mileageKm === lowestKm, `${formatNumber(l.mileageKm)} km`, "le moins roulé")],
+    ["Année", (l) => (l.year === null ? dash : best(l.year === newest, String(l.year), "le plus récent"))],
+    [
+      "Kilométrage",
+      (l) => (l.mileageKm === null ? dash : best(l.mileageKm === lowestKm, `${formatNumber(l.mileageKm)} km`, "le moins roulé")),
+    ],
     ["Catégorie", (l) => CATEGORIES[l.category]],
-    ["Énergie", (l) => l.fuel],
-    ["Boîte", (l) => l.transmission],
+    ["Énergie", (l) => l.fuel ?? dash],
+    ["Boîte", (l) => l.transmission ?? dash],
+    ["État de la pièce", (l) => l.partCondition ?? dash],
     ["Commune", (l) => l.commune],
   ];
 
@@ -63,7 +69,7 @@ export default async function Comparer({ searchParams }: PageProps<"/comparer">)
                 <th key={l.id} scope="col">
                   {l.photos[0] && <img src={`/photos/${l.photos[0].id}?s`} alt="" />}
                   <Link href={`/annonces/${l.id}`}>
-                    {l.brand} {l.model}
+                    {listingTitle(l)}
                   </Link>
                 </th>
               ))}

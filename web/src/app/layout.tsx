@@ -28,6 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <nav aria-label="Navigation principale" className="site-nav">
               <Link href="/annonces?type=SALE">Acheter</Link>
               <Link href="/annonces?type=RENT">Louer</Link>
+              <Link href="/annonces?categorie=PIECE">Pièces</Link>
               <Link href="/vendre">Publier</Link>
               <Link href="/favoris">Favoris</Link>
               <Link href="/messages">Messages</Link>

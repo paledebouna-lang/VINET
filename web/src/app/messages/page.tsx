@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { listingTitle, titleSelect } from "@/lib/listing";
 import { requireUser } from "@/lib/session";
 
 export const instant = false;
@@ -12,7 +13,7 @@ export default async function Messages() {
     where: { OR: [{ buyerId: user.id }, { listing: { sellerId: user.id } }] },
     orderBy: { lastMessageAt: "desc" },
     include: {
-      listing: { select: { brand: true, model: true, year: true } },
+      listing: { select: titleSelect },
       messages: { orderBy: { createdAt: "desc" }, take: 1 },
     },
   });
@@ -32,7 +33,7 @@ export default async function Messages() {
             <Link key={c.id} href={`/messages/${c.id}`} className="card conversation">
               <div className="row">
                 <strong>
-                  {c.listing.brand} {c.listing.model} {c.listing.year}
+                  {listingTitle(c.listing)}
                 </strong>
                 {unread && <span className="status status-pending">Nouveau</span>}
               </div>

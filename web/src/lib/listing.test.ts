@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { formatPrice, listingInput, maskContacts, maskVin, matriculeOf, parseMatricule, rentalInput, sellerProfileInput } from "./listing.ts";
+import { formatPrice, listingTitle, maskContacts, maskVin, matriculeOf, parseMatricule, parseListing, rentalInput, sellerProfileInput } from "./listing.ts";
 
 const valid = {
   kind: "SALE",
@@ -18,16 +18,17 @@ const valid = {
 };
 
 test("accepts a well-formed listing and normalises it", () => {
-  const out = listingInput.parse(valid);
+  const out = parseListing(valid).data!;
   assert.equal(out.brand, "Toyota");
   assert.equal(out.mileageKm, 48000);
   assert.equal(out.priceFcfa, 9800000);
   assert.equal(out.vin, null);
-  assert.equal(listingInput.parse({ ...valid, vin: "jtdbr32e720123456" }).vin, "JTDBR32E720123456");
+  assert.equal(out.partName, null);
+  assert.equal(parseListing({ ...valid, vin: "jtdbr32e720123456" }).data?.vin, "JTDBR32E720123456");
 });
 
 test("rejects incoherent values", () => {
-  const bad = (patch: object) => listingInput.safeParse({ ...valid, ...patch }).success;
+  const bad = (patch: object) => !!parseListing({ ...valid, ...patch }).data;
   assert.equal(bad({ year: "1900" }), false);
   assert.equal(bad({ year: String(new Date().getFullYear() + 2) }), false);
   assert.equal(bad({ mileageKm: "" }), false);
@@ -93,4 +94,26 @@ test("masks phone numbers and e-mails but leaves prices, years and mileage alone
   ]) {
     assert.equal(maskContacts(safe), safe);
   }
+});
+
+test("a spare part: its own fields, sale only, no vehicle fields", () => {
+  const part = { kind: "SALE", category: "PIECE", brand: "Toyota", model: "Corolla 2015 à 2019", priceFcfa: "35 000", commune: "Adjamé", description: "Phare d'origine, aucune rayure, fixations intactes.", partName: "Phare avant gauche", partCondition: "Occasion", partReference: " 81170-02b30 " };
+  const out = parseListing(part).data!;
+  assert.equal(out.partReference, "81170-02B30");
+  assert.equal(out.priceFcfa, 35000);
+  assert.equal(out.year, null);
+  assert.equal(out.mileageKm, null);
+  assert.equal(out.fuel, null);
+  assert.equal(parseListing({ ...part, partReference: "" }).data?.partReference, null);
+  assert.deepEqual(parseListing({ ...part, kind: "RENT" }).errors?.kind, ["Une pièce détachée se vend, elle ne se loue pas."]);
+  assert.ok(parseListing({ ...part, partName: "" }).errors?.partName);
+  assert.ok(parseListing({ ...part, partCondition: "Cassée" }).errors?.partCondition);
+  assert.ok(parseListing({ ...part, priceFcfa: "500" }).errors?.priceFcfa);
+  // A vehicle still needs its own fields.
+  assert.ok(parseListing({ ...part, category: "VOITURE" }).errors?.year);
+});
+
+test("listing titles", () => {
+  assert.equal(listingTitle({ category: "VOITURE", brand: "Toyota", model: "Corolla", year: 2020, partName: null }), "Toyota Corolla 2020");
+  assert.equal(listingTitle({ category: "PIECE", brand: "Toyota", model: "Corolla", year: null, partName: "Phare avant gauche" }), "Phare avant gauche pour Toyota Corolla");
 });

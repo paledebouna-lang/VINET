@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { resolveReport, verifySeller } from "../actions";
 import { prisma } from "@/lib/db";
-import { CATEGORIES, formatNumber, formatPrice, matriculeOf } from "@/lib/listing";
+import { CATEGORIES, formatNumber, formatPrice, listingTitle, matriculeOf, titleSelect } from "@/lib/listing";
 import { contactOf, requireAdmin } from "@/lib/session";
 import { ModerationForm } from "./moderation-form";
 
@@ -30,7 +30,7 @@ export default async function Admin() {
     prisma.report.findMany({
       where: { resolvedAt: null },
       orderBy: { createdAt: "asc" },
-      include: { listing: { select: { brand: true, model: true, year: true } } },
+      include: { listing: { select: titleSelect } },
     }),
   ]);
 
@@ -92,11 +92,14 @@ export default async function Admin() {
           <article key={listing.id} className="card stack">
             <div>
               <h3 className="card-title">
-                {listing.brand} {listing.model} {listing.year}
+                {listingTitle(listing)}
               </h3>
               <p className="muted">
-                {CATEGORIES[listing.category]} · {formatNumber(listing.mileageKm)} km · {listing.fuel} ·{" "}
-                {listing.transmission} · {listing.commune} · {formatPrice(listing.priceFcfa)}
+                {CATEGORIES[listing.category]} ·{" "}
+                {listing.category === "PIECE"
+                  ? `${listing.partCondition}${listing.partReference ? ` · réf. ${listing.partReference}` : ""}`
+                  : `${formatNumber(listing.mileageKm ?? 0)} km · ${listing.fuel} · ${listing.transmission}`}{" "}
+                · {listing.commune} · {formatPrice(listing.priceFcfa)}
               </p>
               {/* The full VIN is shown here only: an admin needs it to check the papers. */}
               <p className="muted small">
@@ -137,7 +140,7 @@ export default async function Admin() {
           <article key={report.id} className="card stack">
             <p>
               <Link href={`/annonces/${report.listingId}`}>
-                {report.listing.brand} {report.listing.model} {report.listing.year}
+                {listingTitle(report.listing)}
               </Link>
             </p>
             <p className="description">{report.reason}</p>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { archiveListing } from "../actions";
 import { prisma } from "@/lib/db";
-import { formatPrice } from "@/lib/listing";
+import { formatPrice, listingTitle } from "@/lib/listing";
 import { requireUser } from "@/lib/session";
 
 export const instant = false;
@@ -39,7 +39,7 @@ export default async function MesAnnonces() {
               <div>
                 <h2 className="card-title">
                   <Link href={`/annonces/${listing.id}`}>
-                    {listing.brand} {listing.model} {listing.year}
+                    {listingTitle(listing)}
                   </Link>
                 </h2>
                 <p className="muted">{formatPrice(listing.priceFcfa)}</p>

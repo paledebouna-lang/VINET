@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import type { FormState } from "../actions";
 import { FieldError } from "../field-error";
 import { createVehicle, reportSighting } from "../vehicle-actions";
-import { CATEGORIES } from "@/lib/listing";
+import { VEHICLE_CATEGORIES } from "@/lib/listing";
 
 export function VehicleForm() {
   const [state, action, pending] = useActionState<FormState, FormData>(createVehicle, {});
@@ -34,7 +34,7 @@ export function VehicleForm() {
             <option value="" disabled>
               Choisir
             </option>
-            {Object.entries(CATEGORIES).map(([value, label]) => (
+            {Object.entries(VEHICLE_CATEGORIES).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
               </option>

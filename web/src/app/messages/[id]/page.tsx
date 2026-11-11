@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ReplyForm } from "./reply-form";
 import { prisma } from "@/lib/db";
+import { listingTitle } from "@/lib/listing";
 import { requireUser } from "@/lib/session";
 
 export const instant = false;
@@ -38,7 +39,7 @@ export default async function Conversation({ params }: PageProps<"/messages/[id]
       </p>
       <h1 className="page-title">
         <Link href={`/annonces/${listing.id}`}>
-          {listing.brand} {listing.model} {listing.year}
+          {listingTitle(listing)}
         </Link>
       </h1>
       <ol className="thread">

@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { type FormState, createListing, updateListing } from "../actions";
 import { FieldError } from "../field-error";
-import { CATEGORIES, COMMUNES, FUELS, KINDS, TRANSMISSIONS } from "@/lib/listing";
+import { CATEGORIES, COMMUNES, FUELS, KINDS, PART_CONDITIONS, TRANSMISSIONS } from "@/lib/listing";
 
 type Existing = { id: string; values: Record<string, string>; photoIds: string[]; hasInsurance: boolean };
 
@@ -17,7 +17,10 @@ export function ListingForm({ existing, passports }: { existing?: Existing; pass
   );
   const v = state.values ?? existing?.values ?? {};
   const [kind, setKind] = useState(v.kind ?? "SALE");
-  const isRent = kind === "RENT";
+  const [category, setCategory] = useState(v.category ?? "");
+  const isPart = category === "PIECE";
+  // A spare part is only ever sold.
+  const isRent = kind === "RENT" && !isPart;
 
   // One labelled text input wired to its server-side error.
   const input = (name: string, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
@@ -60,16 +63,46 @@ export function ListingForm({ existing, passports }: { existing?: Existing; pass
     <form action={action} className="card stack">
       {existing && <input type="hidden" name="id" value={existing.id} />}
       <div className="field">
-        <label htmlFor="kind">Type d&apos;annonce</label>
-        <select key={kind} id="kind" name="kind" defaultValue={kind} onChange={(e) => setKind(e.target.value)}>
-          {Object.entries(KINDS).map(([value, text]) => (
+        <label htmlFor="category">Catégorie</label>
+        <select
+          key={category}
+          id="category"
+          name="category"
+          defaultValue={category}
+          onChange={(e) => setCategory(e.target.value)}
+          aria-describedby="category-error"
+          required
+        >
+          <option value="" disabled>
+            Choisir
+          </option>
+          {Object.entries(CATEGORIES).map(([value, text]) => (
             <option key={value} value={value}>
               {text}
             </option>
           ))}
         </select>
+        <FieldError state={state} name="category" />
       </div>
-      {passports.length > 0 && (
+      {isPart ? (
+        <>
+          <input type="hidden" name="kind" value="SALE" />
+          <FieldError state={state} name="kind" />
+        </>
+      ) : (
+        <div className="field">
+          <label htmlFor="kind">Type d&apos;annonce</label>
+          <select key={kind} id="kind" name="kind" defaultValue={kind} onChange={(e) => setKind(e.target.value)}>
+            {Object.entries(KINDS).map(([value, text]) => (
+              <option key={value} value={value}>
+                {text}
+              </option>
+            ))}
+          </select>
+          <FieldError state={state} name="kind" />
+        </div>
+      )}
+      {!isPart && passports.length > 0 && (
         <div className="field">
           <label htmlFor="vehicleId">Passeport AVS de ce véhicule (facultatif)</label>
           <select key={v.vehicleId ?? ""} id="vehicleId" name="vehicleId" defaultValue={v.vehicleId ?? ""}>
@@ -83,23 +116,36 @@ export function ListingForm({ existing, passports }: { existing?: Existing; pass
           <small>L&apos;annonce affichera l&apos;identifiant AVS du véhicule et un lien pour le vérifier.</small>
         </div>
       )}
-      <div className="form-grid">
-        {select("category", "Catégorie", Object.entries(CATEGORIES))}
-        {input("brand", "Marque", { placeholder: "Toyota" })}
-        {input("model", "Modèle", { placeholder: "Corolla" })}
-        {input("year", "Année", { inputMode: "numeric", placeholder: "2020" })}
-        {input("mileageKm", "Kilométrage (km)", { inputMode: "numeric", placeholder: "48 000" })}
-        {select("fuel", "Énergie", FUELS)}
-        {select("transmission", "Boîte de vitesses", TRANSMISSIONS)}
-        {input("priceFcfa", isRent ? "Prix par jour (FCFA)" : "Prix (FCFA)", {
-          inputMode: "numeric",
-          placeholder: isRent ? "45 000" : "9 800 000",
-        })}
-        {select("commune", "Commune", COMMUNES)}
-        {input("vin", "Numéro de série (VIN), facultatif", { required: false, maxLength: 17 })}
-      </div>
+      {isPart ? (
+        <div className="form-grid">
+          {input("partName", "Désignation de la pièce", { placeholder: "Phare avant gauche" })}
+          {select("partCondition", "État", PART_CONDITIONS)}
+          {input("brand", "Marque du véhicule compatible", { placeholder: "Toyota" })}
+          {input("model", "Modèles et années compatibles", { placeholder: "Corolla 2015 à 2019" })}
+          {input("partReference", "Référence constructeur, facultative", { required: false, maxLength: 40 })}
+          {input("priceFcfa", "Prix (FCFA)", { inputMode: "numeric", placeholder: "35 000" })}
+          {select("commune", "Commune", COMMUNES)}
+        </div>
+      ) : (
+        <div className="form-grid">
+          {input("brand", "Marque", { placeholder: "Toyota" })}
+          {input("model", "Modèle", { placeholder: "Corolla" })}
+          {input("year", "Année", { inputMode: "numeric", placeholder: "2020" })}
+          {input("mileageKm", "Kilométrage (km)", { inputMode: "numeric", placeholder: "48 000" })}
+          {select("fuel", "Énergie", FUELS)}
+          {select("transmission", "Boîte de vitesses", TRANSMISSIONS)}
+          {input("priceFcfa", isRent ? "Prix par jour (FCFA)" : "Prix (FCFA)", {
+            inputMode: "numeric",
+            placeholder: isRent ? "45 000" : "9 800 000",
+          })}
+          {select("commune", "Commune", COMMUNES)}
+          {input("vin", "Numéro de série (VIN), facultatif", { required: false, maxLength: 17 })}
+        </div>
+      )}
       <p className="muted small">
-        Seule la commune est affichée. Le numéro de série n&apos;apparaît jamais en entier sur l&apos;annonce.
+        {isPart
+          ? "Seule la commune est affichée. La référence aide l'acheteur à vérifier la compatibilité."
+          : "Seule la commune est affichée. Le numéro de série n'apparaît jamais en entier sur l'annonce."}
       </p>
 
       {isRent && (

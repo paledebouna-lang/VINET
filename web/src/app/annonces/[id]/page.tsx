@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { toggleFavorite } from "../../actions";
 import { prisma } from "@/lib/db";
-import { CATEGORIES, formatNumber, formatPrice, maskVin } from "@/lib/listing";
+import { CATEGORIES, formatNumber, formatPrice, listingTitle, maskVin } from "@/lib/listing";
 import { getUser } from "@/lib/session";
 import { BookingForm } from "../../locations/forms";
 import { formatDay, isoDay, today } from "@/lib/rental";
@@ -36,7 +36,8 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
   // Unpublished listings exist only for their seller and for admins.
   if (!listing || (listing.status !== "PUBLISHED" && !isOwner && user?.role !== "admin")) notFound();
 
-  const title = `${listing.brand} ${listing.model} ${listing.year}`;
+  const title = listingTitle(listing);
+  const isPart = listing.category === "PIECE";
   const favorite = listing.favorites[0];
   const conversation = listing.conversations[0];
   const seller = listing.seller.sellerProfile;
@@ -68,18 +69,41 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
               <dt>Catégorie</dt>
               <dd>{CATEGORIES[listing.category]}</dd>
             </div>
-            <div>
-              <dt>Kilométrage</dt>
-              <dd>{formatNumber(listing.mileageKm)} km</dd>
-            </div>
-            <div>
-              <dt>Énergie</dt>
-              <dd>{listing.fuel}</dd>
-            </div>
-            <div>
-              <dt>Boîte</dt>
-              <dd>{listing.transmission}</dd>
-            </div>
+            {isPart ? (
+              <>
+                <div>
+                  <dt>État</dt>
+                  <dd>{listing.partCondition}</dd>
+                </div>
+                <div>
+                  <dt>Compatible avec</dt>
+                  <dd>
+                    {listing.brand} {listing.model}
+                  </dd>
+                </div>
+                {listing.partReference && (
+                  <div>
+                    <dt>Référence</dt>
+                    <dd className="mono">{listing.partReference}</dd>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div>
+                  <dt>Kilométrage</dt>
+                  <dd>{formatNumber(listing.mileageKm ?? 0)} km</dd>
+                </div>
+                <div>
+                  <dt>Énergie</dt>
+                  <dd>{listing.fuel}</dd>
+                </div>
+                <div>
+                  <dt>Boîte</dt>
+                  <dd>{listing.transmission}</dd>
+                </div>
+              </>
+            )}
             {isRent && (
               <>
                 <div>
@@ -135,6 +159,11 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
                 </div>
               )}
             </>
+          ) : isPart ? (
+            <p className="muted small">
+              Vérifiez la référence et la compatibilité avec le vendeur avant de payer. MonAuto met en relation vendeur
+              et acheteur et ne garantit pas la pièce.
+            </p>
           ) : (
             <p className="muted small">
               Le transfert de propriété se fait selon la procédure officielle. MonAuto met en relation vendeur et
@@ -184,7 +213,7 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
                   Continuer la conversation
                 </Link>
               ) : (
-                <MessageForm listingId={listing.id} />
+                <MessageForm listingId={listing.id} isPart={isPart} />
               )}
               <form action={toggleFavorite}>
                 <input type="hidden" name="listingId" value={listing.id} />

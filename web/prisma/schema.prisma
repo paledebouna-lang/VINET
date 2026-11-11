@@ -128,6 +128,8 @@ enum Category {
   VOITURE
   MOTO
   UTILITAIRE
+  // Listings only: a vehicle passport is never a part.
+  PIECE
 }
 
 model Listing {
@@ -138,10 +140,15 @@ model Listing {
   category          Category
   brand             String
   model             String
-  year              Int
-  mileageKm         Int
-  fuel              String
-  transmission      String
+  // Vehicle listings only; null for a spare part.
+  year              Int?
+  mileageKm         Int?
+  fuel              String?
+  transmission      String?
+  // Spare parts only. brand and model then name the vehicles the part fits.
+  partName          String?
+  partCondition     String?
+  partReference     String?
   priceFcfa         Int
   // The price before the seller's last edit, kept until that edit is published and watchers are told.
   previousPriceFcfa Int?
