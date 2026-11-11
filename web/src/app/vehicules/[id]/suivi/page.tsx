@@ -3,12 +3,13 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { type MapPoint, MapLegend, TrackingMap } from "../../../suivi/tracking-map";
 import { acknowledgeAlert } from "../../../tracking-actions";
-import { TrackerForm, ZoneForm } from "./forms";
+import { BeaconForm, TrackerForm, ZoneForm } from "./forms";
 import { logPositionView } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { siteUrl } from "@/lib/mail";
 import { requireUser } from "@/lib/session";
 import { ago, isLive } from "@/lib/tracking";
+import { lastDetection } from "@/lib/vinet";
 
 export const instant = false;
 
@@ -27,6 +28,7 @@ export default async function Suivi({ params }: PageProps<"/vehicules/[id]/suivi
       alerts: { orderBy: { createdAt: "desc" }, take: 20 },
       sightings: { where: { kind: "OBSERVATION", latitude: { not: null } }, orderBy: { createdAt: "desc" }, take: 10 },
       theftCases: { where: { status: "ACTIVE" }, select: { id: true } },
+      beacon: { include: { detections: { orderBy: { detectedAt: "desc" }, take: 50 } } },
     },
   });
   if (!vehicle) notFound();
@@ -39,6 +41,7 @@ export default async function Suivi({ params }: PageProps<"/vehicules/[id]/suivi
   const live = isLive(tracker?.lastSeenAt ?? null);
   const hasZone = vehicle.zoneLat !== null && vehicle.zoneLng !== null && vehicle.zoneRadiusKm !== null;
 
+  const seen = lastDetection(vehicle.beacon?.detections ?? []);
   const points: MapPoint[] = [
     ...vehicle.sightings.map((s) => ({
       latitude: s.latitude!,
@@ -53,6 +56,17 @@ export default async function Suivi({ params }: PageProps<"/vehicules/[id]/suivi
             longitude: latest.longitude,
             kind: live ? ("live" as const) : ("last" as const),
             label: live ? `En direct · GPS · ${ago(latest.recordedAt)}` : `Dernière position · GPS · ${dateTimeFr.format(latest.recordedAt)}`,
+          },
+        ]
+      : []),
+    ...(seen
+      ? [
+          {
+            latitude: seen.detection.latitude,
+            longitude: seen.detection.longitude,
+            kind: "detection" as const,
+            radiusM: seen.radiusM,
+            label: `Détection · VINET · ${dateTimeFr.format(seen.detection.detectedAt)}`,
           },
         ]
       : []),
@@ -90,14 +104,19 @@ export default async function Suivi({ params }: PageProps<"/vehicules/[id]/suivi
         </section>
       )}
 
-      {latest ? (
+      {points.length > 0 && (
         <>
           <TrackingMap
             points={points}
             path={positions.map((p) => [p.latitude, p.longitude])}
             zone={hasZone ? { latitude: vehicle.zoneLat!, longitude: vehicle.zoneLng!, radiusKm: vehicle.zoneRadiusKm! } : undefined}
           />
-          <MapLegend zone={hasZone} path={positions.length > 1} />
+          <MapLegend zone={hasZone} path={positions.length > 1} detection={!!seen} />
+        </>
+      )}
+
+      {latest ? (
+        <>
           <section className="card stack">
             <div className="row">
               <h2 className="sub-title">{live ? "Position en direct" : "Dernière position connue"}</h2>
@@ -138,7 +157,34 @@ export default async function Suivi({ params }: PageProps<"/vehicules/[id]/suivi
           </section>
         </>
       ) : (
-        <p className="muted">{tracker ? "La balise n'a encore transmis aucune position." : "Ce véhicule n'a pas de balise déclarée."}</p>
+        <p className="muted">{tracker ? "La balise n'a encore transmis aucune position." : "Ce véhicule n'a pas de balise GPS déclarée."}</p>
+      )}
+
+      {seen && (
+        <section className="card stack">
+          <div className="row">
+            <h2 className="sub-title">Dernière détection VINET</h2>
+            <span className="status status-pending">Détection · VINET · {ago(seen.detection.detectedAt)}</span>
+          </div>
+          <dl className="specs">
+            <div>
+              <dt>Heure (UTC)</dt>
+              <dd>{dateTimeFr.format(seen.detection.detectedAt)}</dd>
+            </div>
+            <div>
+              <dt>Zone probable</dt>
+              <dd>{seen.radiusM} m autour du détecteur</dd>
+            </div>
+            <div>
+              <dt>Qualité</dt>
+              <dd>{seen.quality}</dd>
+            </div>
+          </dl>
+          <p className="muted small">
+            Un détecteur partenaire a capté la balise Bluetooth du véhicule. Le point est la position du détecteur, pas
+            celle du véhicule : il se trouvait dans le cercle à cette heure.
+          </p>
+        </section>
       )}
 
       {tracker && (
@@ -163,6 +209,16 @@ export default async function Suivi({ params }: PageProps<"/vehicules/[id]/suivi
           La balise, ou la passerelle qui la relie, envoie ses positions à <span className="mono">{siteUrl}/api/trackers/positions</span>{" "}
           avec cette clé.
         </p>
+      </section>
+
+      <section className="card stack">
+        <h2 className="sub-title">Balise VINET (Bluetooth)</h2>
+        <p className="muted small">
+          {vehicle.beacon
+            ? `Balise enregistrée le ${dateTimeFr.format(vehicle.beacon.createdAt)}. ${vehicle.beacon.lastDetectedAt ? `Dernière détection ${ago(vehicle.beacon.lastDetectedAt)}.` : "Pas encore détectée."}`
+            : "Une balise VINET diffuse un identifiant qui change régulièrement : seul MonAuto sait le relier à ce véhicule. Relevez ces quatre valeurs dans l'outil de configuration de la balise, au même moment."}
+        </p>
+        <BeaconForm vehicleId={id} registered={!!vehicle.beacon} />
       </section>
 
       {positions.length > 0 && (

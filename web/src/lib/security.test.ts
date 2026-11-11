@@ -70,3 +70,18 @@ test("lists what is known newest first, each source with its own reliability", (
   assert.equal(live[0].point?.kind, "live");
   assert.deepEqual(researchRows(undefined, false, []), []);
 });
+
+test("a VINET detection is its own source, with its radius and quality", () => {
+  const rows = researchRows(undefined, false, [], {
+    detectedAt: new Date("2026-11-11T12:00:00Z"),
+    latitude: 5.32,
+    longitude: -4.01,
+    radiusM: 60,
+    quality: "Moyenne : un seul détecteur",
+  });
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].source, "VINET · détection");
+  assert.equal(rows[0].point?.kind, "detection");
+  assert.equal(rows[0].point?.radiusM, 60);
+  assert.match(rows[0].detail, /60 m/);
+});

@@ -50,6 +50,22 @@ Content-Type: application/json
 
 `time` est l'heure de la mesure (ISO 8601), `accuracy` en mètres, `speed` en km/h ; ces trois derniers champs sont facultatifs. Jusqu'à 500 positions par envoi. Une position déjà reçue est ignorée. Réponses : 200 avec le nombre de positions enregistrées, 400 si le contenu est invalide, 401 si la clé est inconnue.
 
+## Détecteurs VINET
+
+Les balises VINET suivent le standard Eddystone-EID : elles diffusent un identifiant de 8 octets qui change toutes les 2^K secondes. Le propriétaire enregistre la balise sur la page de suivi du véhicule, avec quatre valeurs relevées au même moment dans l'outil de configuration de la balise : la clé d'identité, l'exposant K, le compteur de la balise et l'identifiant diffusé. La clé d'identité est chiffrée en base avec `VINET_SECRET`.
+
+L'équipe ajoute un détecteur partenaire sur `/admin/detecteurs` et lui transmet sa clé, affichée une seule fois. Le détecteur envoie ce qu'il capte ainsi :
+
+```http
+POST /api/vinet/detections
+Authorization: Bearer <clé du détecteur>
+Content-Type: application/json
+
+{"detections": [{"time": "2026-11-11T12:00:00Z", "eid": "df8e76bbfec4efc5", "lat": 5.3599, "lng": -4.0083, "accuracy": 15, "rssi": -78}]}
+```
+
+`time` est l'heure de la réception, `eid` l'identifiant capté (16 caractères hexadécimaux), `lat` et `lng` la position du détecteur, `accuracy` sa précision en mètres et `rssi` la puissance du signal en dBm ; ces deux derniers champs sont facultatifs. Jusqu'à 500 détections par envoi et 5 000 par heure et par détecteur. Un identifiant qui ne correspond à aucune balise enregistrée, ou capté trop loin de son heure de validité, est ignoré. Réponses : 200 avec le nombre de détections reçues et conservées, 400, 401 si la clé est inconnue ou révoquée, 429 au-delà du débit.
+
 ## Vérifications
 
 ```bash

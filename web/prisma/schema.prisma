@@ -410,6 +410,7 @@ model Vehicle {
   zoneLng      Float?
   zoneRadiusKm Float?
   tracker      Tracker?
+  beacon       Beacon?
   alerts       Alert[]
   theftCases   TheftCase[]
   sightings    Sighting[]
@@ -567,4 +568,57 @@ model CaseEvent {
 
   @@index([theftCaseId, createdAt])
   @@map("case_event")
+}
+
+// A VINET Bluetooth beacon (Eddystone-EID). It broadcasts an identifier that changes every
+// 2^rotationExponent seconds; only the identity key links it to the vehicle.
+model Beacon {
+  id               String      @id @default(cuid())
+  vehicleId        String      @unique
+  vehicle          Vehicle     @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  // AES-128 identity key, encrypted with VINET_SECRET.
+  sealedKey        String
+  // SHA-256 of the identity key: one beacon cannot be registered on two vehicles.
+  keyHash          String      @unique
+  rotationExponent Int
+  // Beacon clock = server time in seconds - clockOffset, measured at registration.
+  clockOffset      Float
+  createdAt        DateTime    @default(now())
+  lastDetectedAt   DateTime?
+  detections       Detection[]
+
+  @@map("beacon")
+}
+
+// A partner device (gateway, phone app) that listens for VINET beacons. Created by the team.
+model Detector {
+  id         String      @id @default(cuid())
+  name       String
+  // SHA-256 of the detector key. The key is shown once, at creation.
+  keyHash    String      @unique
+  createdAt  DateTime    @default(now())
+  revokedAt  DateTime?
+  lastSeenAt DateTime?
+  detections Detection[]
+
+  @@map("detector")
+}
+
+// A beacon heard by a detector. The position is the detector's, not the vehicle's.
+model Detection {
+  id         String   @id @default(cuid())
+  beaconId   String
+  beacon     Beacon   @relation(fields: [beaconId], references: [id], onDelete: Cascade)
+  detectorId String
+  detector   Detector @relation(fields: [detectorId], references: [id], onDelete: Cascade)
+  detectedAt DateTime
+  receivedAt DateTime @default(now())
+  latitude   Float
+  longitude  Float
+  accuracyM  Int?
+  rssi       Int?
+
+  @@unique([beaconId, detectorId, detectedAt])
+  @@index([detectedAt])
+  @@map("detection")
 }

@@ -1176,3 +1176,11 @@ hr {
   display: flex;
   flex-direction: column;
 }
+
+/* VINET detection: a square, with the circle where the vehicle is likely to be. */
+.map-marker-detection {
+  border-radius: 3px;
+  background: #7c3aed;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px #7c3aed;
+}

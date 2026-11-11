@@ -13,6 +13,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
           <Link href="/admin">Modération</Link>
           <Link href="/admin/vehicules">Véhicules</Link>
           <Link href="/admin/securite">Sécurité</Link>
+          <Link href="/admin/detecteurs">Détecteurs</Link>
           <Link href="/admin/utilisateurs">Utilisateurs</Link>
           <Link href="/admin/demandes">Demandes et litiges</Link>
           <Link href="/admin/journal">Journal</Link>

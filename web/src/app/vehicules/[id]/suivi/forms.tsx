@@ -3,7 +3,9 @@
 import { useActionState } from "react";
 import type { FormState } from "../../../actions";
 import { FieldError } from "../../../field-error";
+import { SubmitButton, SubmitForm } from "../../../submit-form";
 import { type TrackerState, saveTracker, saveZone } from "../../../tracking-actions";
+import { registerBeacon, removeBeacon } from "../../../vinet-actions";
 
 export function TrackerForm({ vehicleId, current }: { vehicleId: string; current?: { model: string; serial: string } }) {
   const [state, action, pending] = useActionState<TrackerState, FormData>(saveTracker, {});
@@ -79,5 +81,58 @@ export function ZoneForm({ vehicleId, current, hasZone }: { vehicleId: string; c
         )}
       </div>
     </form>
+  );
+}
+
+/** Registers a VINET beacon with the four values its configuration tool shows at one moment. */
+export function BeaconForm({ vehicleId, registered }: { vehicleId: string; registered: boolean }) {
+  const [state, action, pending] = useActionState<FormState, FormData>(registerBeacon, {});
+  const v = state.ok ? {} : (state.values ?? {});
+  return (
+    <>
+      <form action={action} className="stack" key={state.ok ? "done" : "form"}>
+        <input type="hidden" name="vehicleId" value={vehicleId} />
+        <div className="form-grid">
+          <div className="field">
+            <label htmlFor="identityKey">Clé d&apos;identité (32 caractères)</label>
+            <input id="identityKey" name="identityKey" className="mono" autoComplete="off" spellCheck={false} defaultValue={v.identityKey} required aria-describedby="identityKey-error" />
+            <FieldError state={state} name="identityKey" />
+          </div>
+          <div className="field">
+            <label htmlFor="rotationExponent">Exposant de rotation</label>
+            <select id="rotationExponent" name="rotationExponent" key={v.rotationExponent ?? "10"} defaultValue={v.rotationExponent ?? "10"} aria-describedby="rotationExponent-error">
+              {[8, 9, 10, 11, 12, 13, 14, 15].map((k) => (
+                <option key={k} value={k}>
+                  {k} : nouvel identifiant toutes les {2 ** k < 3600 ? `${Math.round(2 ** k / 60)} min` : `${(2 ** k / 3600).toFixed(1).replace(".", ",")} h`}
+                </option>
+              ))}
+            </select>
+            <FieldError state={state} name="rotationExponent" />
+          </div>
+          <div className="field">
+            <label htmlFor="counter">Compteur de la balise (secondes)</label>
+            <input id="counter" name="counter" inputMode="numeric" defaultValue={v.counter} required aria-describedby="counter-error" />
+            <FieldError state={state} name="counter" />
+          </div>
+          <div className="field">
+            <label htmlFor="eid">Identifiant diffusé à cet instant (16 caractères)</label>
+            <input id="eid" name="eid" className="mono" autoComplete="off" spellCheck={false} defaultValue={v.eid} required aria-describedby="eid-error" />
+            <FieldError state={state} name="eid" />
+          </div>
+        </div>
+        <div aria-live="polite">
+          {state.errors?.form && <p className="alert">{state.errors.form[0]}</p>}
+          {state.ok && <p className="notice">Balise VINET enregistrée.</p>}
+        </div>
+        <button className="btn btn-primary" disabled={pending}>
+          {registered ? "Remplacer la balise VINET" : "Enregistrer la balise VINET"}
+        </button>
+      </form>
+      {registered && (
+        <SubmitForm action={removeBeacon} fields={{ vehicleId }}>
+          <SubmitButton className="btn btn-ghost">Retirer la balise VINET et effacer ses détections</SubmitButton>
+        </SubmitForm>
+      )}
+    </>
   );
 }

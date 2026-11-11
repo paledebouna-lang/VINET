@@ -82,13 +82,15 @@ type Seen = {
   accuracyM: number | null;
 };
 
+type Heard = { detectedAt: Date; latitude: number; longitude: number; radiusM: number; quality: string };
+
 export type ResearchRow = {
   at: Date;
   source: string;
   detail: string;
   reliability: string;
   // Present when the row can be drawn on the map.
-  point?: { latitude: number; longitude: number; kind: "live" | "last" | "observation" };
+  point?: { latitude: number; longitude: number; kind: "live" | "last" | "observation" | "detection"; radiusM?: number };
 };
 
 const coords = (p: { latitude: number; longitude: number }) => `${p.latitude.toFixed(5)}, ${p.longitude.toFixed(5)}`;
@@ -97,7 +99,7 @@ const coords = (p: { latitude: number; longitude: number }) => `${p.latitude.toF
  * Everything known about where the vehicle is, newest first, each line naming its source and
  * how far it can be trusted. A GPS fix and a passer-by's report never read as the same thing.
  */
-export function researchRows(latest: GpsFix | undefined, live: boolean, sightings: Seen[]): ResearchRow[] {
+export function researchRows(latest: GpsFix | undefined, live: boolean, sightings: Seen[], heard?: Heard): ResearchRow[] {
   const rows: ResearchRow[] = sightings.map((s) => {
     const located = s.latitude !== null && s.longitude !== null;
     return {
@@ -117,6 +119,15 @@ export function researchRows(latest: GpsFix | undefined, live: boolean, sighting
       detail: `${coords(latest)}${latest.accuracyM !== null ? `, ± ${latest.accuracyM} m` : ""}`,
       reliability: live ? "Élevée" : "Moyenne : le véhicule a pu bouger depuis",
       point: { latitude: latest.latitude, longitude: latest.longitude, kind: live ? "live" : "last" },
+    });
+  }
+  if (heard) {
+    rows.push({
+      at: heard.detectedAt,
+      source: "VINET · détection",
+      detail: `Dans un rayon de ${heard.radiusM} m autour de ${coords(heard)}`,
+      reliability: heard.quality,
+      point: { latitude: heard.latitude, longitude: heard.longitude, kind: "detection", radiusM: heard.radiusM },
     });
   }
   return rows.sort((a, b) => b.at.getTime() - a.at.getTime());

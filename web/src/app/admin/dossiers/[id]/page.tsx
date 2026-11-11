@@ -33,6 +33,7 @@ export default async function Dossier({ params }: PageProps<"/admin/dossiers/[id
       vehicle: {
         include: {
           tracker: true,
+          beacon: { select: { id: true } },
           documents: { where: { kind: "REGISTRATION" } },
           // A rental signed or under way: the renter may be the person who did not bring the vehicle back.
           listings: {
@@ -222,7 +223,7 @@ export default async function Dossier({ params }: PageProps<"/admin/dossiers/[id
             {points.length > 0 && (
               <>
                 <TrackingMap points={points} path={research.positions.map((p) => [p.latitude, p.longitude])} />
-                <MapLegend path={research.positions.length > 1} />
+                <MapLegend path={research.positions.length > 1} detection={research.detections.length > 0} />
               </>
             )}
             {research.rows.length === 0 ? (
@@ -263,6 +264,35 @@ export default async function Dossier({ params }: PageProps<"/admin/dossiers/[id
                 </ul>
                 <p className="muted small">Réservé à l&apos;équipe : le propriétaire ne connaît pas leur identité.</p>
               </div>
+            )}
+            {research.detections.length > 0 && (
+              <details>
+                <summary>Détections VINET depuis la veille du vol ({research.detections.length})</summary>
+                <div className="table-scroll">
+                  <table className="compare">
+                    <thead>
+                      <tr>
+                        <th scope="col">Heure (UTC)</th>
+                        <th scope="col">Position du détecteur</th>
+                        <th scope="col">Précision</th>
+                        <th scope="col">Détecteur</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {research.detections.slice(0, 50).map((d) => (
+                        <tr key={d.id}>
+                          <td>{dateTimeFr.format(d.detectedAt)}</td>
+                          <td className="mono">
+                            {d.latitude.toFixed(5)}, {d.longitude.toFixed(5)}
+                          </td>
+                          <td>{d.accuracyM !== null ? `± ${d.accuracyM} m` : ""}</td>
+                          <td>{d.detector.name}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
             )}
             {research.positions.length > 0 && (
               <details>

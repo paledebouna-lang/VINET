@@ -7,8 +7,10 @@ export type MapPoint = {
   latitude: number;
   longitude: number;
   // The source of a position is never mixed up with another: each has its own shape and label.
-  kind: "live" | "last" | "observation";
+  kind: "live" | "last" | "observation" | "detection";
   label: string;
+  // A VINET detection: the vehicle is likely within this distance of the detector.
+  radiusM?: number;
 };
 type Zone = { latitude: number; longitude: number; radiusKm: number };
 
@@ -50,6 +52,11 @@ export function TrackingMap({ points, path = [], zone }: { points: MapPoint[]; p
         }).addTo(map);
         marker.bindTooltip(p.label, { permanent: points.length <= 4, direction: "top", offset: [0, -12] });
         bounds.extend([p.latitude, p.longitude]);
+        if (p.radiusM) {
+          const center = L.latLng(p.latitude, p.longitude);
+          L.circle(center, { radius: p.radiusM, color: "#7c3aed", weight: 2, fillOpacity: 0.12 }).addTo(map);
+          bounds.extend(center.toBounds(p.radiusM * 2));
+        }
       }
       if (bounds.isValid()) map.fitBounds(bounds.pad(0.3), { maxZoom: 16 });
       else map.setView([5.345, -4.024], 11); // Abidjan
@@ -63,7 +70,7 @@ export function TrackingMap({ points, path = [], zone }: { points: MapPoint[]; p
   return <div ref={container} className="map" role="region" aria-label="Carte des positions" />;
 }
 
-export function MapLegend({ zone = false, path = false }: { zone?: boolean; path?: boolean }) {
+export function MapLegend({ zone = false, path = false, detection = false }: { zone?: boolean; path?: boolean; detection?: boolean }) {
   return (
     <ul className="map-legend">
       <li>
@@ -75,6 +82,11 @@ export function MapLegend({ zone = false, path = false }: { zone?: boolean; path
       <li>
         <span className="map-marker map-marker-observation" aria-hidden="true" /> Observation · QR
       </li>
+      {detection && (
+        <li>
+          <span className="map-marker map-marker-detection" aria-hidden="true" /> Détection · VINET, avec sa zone probable
+        </li>
+      )}
       {path && (
         <li>
           <span className="legend-path" aria-hidden="true" /> Trajet récent

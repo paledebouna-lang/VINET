@@ -215,10 +215,26 @@ Reste à faire :
 Sortie : un dossier de vol est ouvert, instruit et clos avec une trace complète. Vérifié en local de bout en bout (52 contrôles), avec des positions simulées.
 
 ### Lot 8 — Prototype VINET
-- Balise BLE à identifiant rotatif, détecteur partenaire, serveur d'événements, anti-abus.
-- Tests terrain de portée et de fiabilité.
 
-Sortie : une « dernière détection » réelle apparaît sur la carte avec rayon et qualité.
+Fait, côté serveur, sans balise ni détecteur réels :
+
+- **Identifiant tournant** selon le standard publié Eddystone-EID (Google) : la balise diffuse un identifiant qui change toutes les 2^K secondes ; seul MonAuto, qui détient la clé, sait le relier au véhicule. Le calcul est vérifié sur des valeurs produites par une réimplémentation indépendante de l'outil de référence de Google.
+- **Enregistrement de la balise** par le propriétaire, sur la page de suivi du véhicule, avec quatre valeurs relevées au même moment dans l'outil de configuration de la balise ; l'identifiant diffusé prouve que la clé et l'horloge ont été recopiées correctement. La clé est chiffrée en base (`VINET_SECRET`) et n'est jamais réaffichée. Une même balise ne peut pas être rattachée à deux véhicules. Retirer la balise efface ses détections.
+- **Détecteurs partenaires** créés par l'équipe (`/admin/detecteurs`), chacun avec sa clé, affichée une fois et révocable.
+- **Serveur d'événements** (`/api/vinet/detections`, format dans le README). Anti-abus : clé de détecteur obligatoire, 5 000 détections par heure et par détecteur, identifiant accepté seulement autour de son heure de validité (un identifiant capté puis rejoué plus tard est ignoré), doublons ignorés. Les identifiants qui n'appartiennent à aucune balise enregistrée ne sont pas conservés.
+- **Dernière détection sur la carte** avec sa zone probable (un cercle) et sa qualité : « moyenne » avec un seul détecteur, « bonne » quand un deuxième détecteur proche la confirme dans le quart d'heure. Visible du propriétaire, et de l'équipe pendant un dossier de vol confirmé (tableau des sources, carte, dossier imprimable sans le nom des détecteurs). L'équipe est prévenue par e-mail quand un véhicule volé est détecté, au plus une fois par heure.
+- Détections supprimées après 90 jours, comme les positions GPS.
+
+Reste à faire :
+
+- **Choisir une balise réelle** compatible Eddystone-EID, avec un outil de configuration qui affiche la clé d'identité, le compteur et l'identifiant diffusé. Il faut le modèle et sa documentation.
+- **Détecteur partenaire** : passerelle Bluetooth (boîtier fixe) ou application de téléphone, qui capte les identifiants et les envoie au format du README. À choisir avec les partenaires ; le site ne peut pas écouter le Bluetooth depuis un navigateur sur iPhone.
+- **Tests terrain** de portée et de fiabilité : la portée retenue pour le rayon (50 m) est une hypothèse à remplacer par la valeur mesurée.
+- Retrouver une balise dont l'horloge a dérivé de plus de quelques minutes ou s'est remise à zéro (changement de pile) : aujourd'hui il faut la réenregistrer.
+- Enregistrement par échange de clés (méthode plus sûre du standard) si la balise retenue le permet.
+- Au-delà de quelques milliers de balises, précalculer les identifiants attendus au lieu de les recalculer à chaque détection.
+
+Sortie : une dernière détection apparaît sur la carte avec rayon et qualité. Vérifié en local de bout en bout (33 contrôles) avec un détecteur simulé et des identifiants calculés par l'implémentation de référence ; pas encore avec une balise réelle.
 
 ### Lot 9 — Pilote Côte d'Ivoire
 Agences sélectionnées, véhicules volontaires, procédures de vol, support, mesure.

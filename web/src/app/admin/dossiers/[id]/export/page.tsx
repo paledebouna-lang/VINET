@@ -21,7 +21,7 @@ export default async function Export({ params, searchParams }: PageProps<"/admin
   const theftCase = await prisma.theftCase.findFirst({
     where: { id, status: "ACTIVE" },
     include: {
-      vehicle: { include: { tracker: true } },
+      vehicle: { include: { tracker: true, beacon: { select: { id: true } } } },
       declarant: { include: { sellerProfile: true } },
       // Working notes stay inside MonAuto: only what the owner said goes out.
       events: { where: { kind: { in: ["OWNER_NOTE", "OWNER_FOUND"] } }, orderBy: { createdAt: "asc" } },
@@ -163,6 +163,37 @@ export default async function Export({ params, searchParams }: PageProps<"/admin
         <p className="small">
           L&apos;identité des auteurs des signalements est conservée par MonAuto et communiquée sur réquisition.
         </p>
+      )}
+      {research.detections.length > 0 && (
+        <>
+          <h2 className="sub-title">Détections VINET ({research.detections.length})</h2>
+          <div className="table-scroll">
+            <table className="compare">
+              <thead>
+                <tr>
+                  <th scope="col">Heure (UTC)</th>
+                  <th scope="col">Position du détecteur</th>
+                  <th scope="col">Précision du détecteur</th>
+                </tr>
+              </thead>
+              <tbody>
+                {research.detections.map((d) => (
+                  <tr key={d.id}>
+                    <td>{dateTimeFr.format(d.detectedAt)}</td>
+                    <td className="mono">
+                      {d.latitude.toFixed(5)}, {d.longitude.toFixed(5)}
+                    </td>
+                    <td>{d.accuracyM !== null ? `± ${d.accuracyM} m` : ""}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="small">
+            Une détection VINET est la position d&apos;un détecteur partenaire qui a capté la balise Bluetooth du
+            véhicule : le véhicule se trouvait à quelques dizaines de mètres de ce point.
+          </p>
+        </>
       )}
       {research.positions.length > 0 && (
         <>
