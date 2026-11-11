@@ -128,7 +128,13 @@ if systemctl is-active --quiet apache2; then
 </VirtualHost>
 SITE
   a2ensite -q monauto >/dev/null
-  apachectl configtest && systemctl reload apache2
+  # A configuration Apache refuses would also stop the other sites at the next reload: it is removed at once.
+  if ! apachectl configtest; then
+    a2dissite -q monauto >/dev/null
+    echo "Apache refuse la configuration de MonAuto ; elle a été retirée et les autres sites ne sont pas touchés."
+    exit 1
+  fi
+  systemctl reload apache2
   web=apache
 else
   if ! systemctl is-active --quiet nginx && ss -ltn "( sport = :80 )" | grep -q LISTEN; then
@@ -138,10 +144,12 @@ else
     exit 1
   fi
   apt-get install -y -q nginx
+  ipv6=""
+  [ -f /proc/net/if_inet6 ] && ipv6="listen [::]:80;"
   cat > /etc/nginx/sites-available/monauto <<SITE
 server {
     listen 80;
-    listen [::]:80;
+    $ipv6
     server_name $DOMAIN www.$DOMAIN;
     client_max_body_size 80m;
 
@@ -155,7 +163,13 @@ server {
 }
 SITE
   ln -sf /etc/nginx/sites-available/monauto /etc/nginx/sites-enabled/monauto
-  nginx -t && systemctl reload nginx
+  # A configuration Nginx refuses would also stop the other sites at the next reload: it is removed at once.
+  if ! nginx -t; then
+    rm -f /etc/nginx/sites-enabled/monauto
+    echo "Nginx refuse la configuration ; celle de MonAuto a été retirée et les autres sites ne sont pas touchés."
+    exit 1
+  fi
+  systemctl reload nginx
   web=nginx
 fi
 if ufw status 2>/dev/null | grep -q "Status: active"; then ufw allow 80/tcp >/dev/null; ufw allow 443/tcp >/dev/null; fi

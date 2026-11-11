@@ -246,7 +246,7 @@ Fait :
 
 Reste à faire, avant le lancement (le détail est dans le plan du pilote) :
 
-- **Mettre le site en ligne** sur le VPS : il faut le système, le serveur web ou le panneau de contrôle, la mémoire libre et un accès. Puis installation, sauvegardes, HTTPS et la tâche planifiée qui supprime les anciennes données.
+- **Mettre le site en ligne** sur le VPS (Ubuntu 24.04, sans panneau de contrôle, 8 Go de mémoire) : les scripts et le guide pas à pas sont prêts (`docs/MISE_EN_LIGNE.md`) et ont été répétés sur un Ubuntu 24.04 identique. Restent à faire sur le serveur : pointer le domaine, lancer l'installation, brancher la boîte e-mail, activer HTTPS, créer le premier administrateur, activer une sauvegarde hors du serveur. Tant que les SMS ne sont pas branchés, la connexion se fait par e-mail seulement.
 - Décider de la **double vérification** des comptes administrateur et agence (recommandée).
 - Choisir la **balise GPS** réelle et le **fournisseur de fonds de carte**.
 - Faire relire par le juriste le contrat de location, les engagements de vol, la lettre d'engagement des agences et l'accord des propriétaires.

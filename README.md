@@ -3,6 +3,8 @@
 Marketplace d'achat, de vente et de location de véhicules, avec la sécurité AVS et le réseau de détection VINET.
 
 - `docs/FEUILLE_DE_ROUTE.md` — ordre des lots, décisions prises et à prendre.
+- `docs/MISE_EN_LIGNE.md` — installer le site sur le VPS, le mettre à jour, le sauvegarder.
+- `deploy/` — les scripts d'installation, de mise à jour et de maintenance de nuit.
 - `web/` — le site et son API (Next.js, PostgreSQL via Prisma, connexion par code avec better-auth).
 
 ## Lancer le site en local
