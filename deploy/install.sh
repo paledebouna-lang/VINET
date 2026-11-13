@@ -2,12 +2,16 @@
 # Installs MonAuto on Ubuntu 24.04, next to the sites already on the server, without touching them.
 # Run as root:  sudo bash install.sh
 # Settings (optional):  DOMAIN=monauto.org  CERTBOT_EMAIL=vous@exemple.com  BRANCH=…  PORT=3100
+#   WEB_SERVER=external  another web server publishes the site (e.g. Caddy in Docker): no Nginx/Apache, no certbot.
+#   LISTEN=172.18.0.1    address the site listens on; for a web server in Docker, its network's gateway.
 # Safe to run again: what already exists is kept (database, secrets, uploads).
 set -euo pipefail
 
 DOMAIN="${DOMAIN:-monauto.org}"
 BRANCH="${BRANCH:-claude/great-curie-zfx98o}"
 PORT="${PORT:-3100}"
+LISTEN="${LISTEN:-127.0.0.1}"
+WEB_SERVER="${WEB_SERVER:-auto}"
 CERTBOT_EMAIL="${CERTBOT_EMAIL:-}"
 REPO="https://github.com/paledebouna-lang/VINET.git"
 NODE_VERSION="22.23.5"
@@ -97,7 +101,7 @@ After=network.target postgresql.service
 User=monauto
 WorkingDirectory=$WEB
 Environment=NODE_ENV=production
-ExecStart=$NODE $WEB/node_modules/next/dist/bin/next start -H 127.0.0.1 -p $PORT
+ExecStart=$NODE $WEB/node_modules/next/dist/bin/next start -H $LISTEN -p $PORT
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true
@@ -114,15 +118,18 @@ systemctl restart monauto
 
 say "Serveur web"
 # Photos: 8 of 8 MB at most, plus an attestation.
-if systemctl is-active --quiet apache2; then
+if [ "$WEB_SERVER" = external ]; then
+  echo "Le serveur web existant publie le site : il doit transmettre $DOMAIN à http://$LISTEN:$PORT (voir docs/MISE_EN_LIGNE.md)."
+  web=external
+elif systemctl is-active --quiet apache2; then
   a2enmod -q proxy proxy_http headers >/dev/null
   cat > /etc/apache2/sites-available/monauto.conf <<SITE
 <VirtualHost *:80>
     ServerName $DOMAIN
     ServerAlias www.$DOMAIN
     ProxyPreserveHost On
-    ProxyPass / http://127.0.0.1:$PORT/
-    ProxyPassReverse / http://127.0.0.1:$PORT/
+    ProxyPass / http://$LISTEN:$PORT/
+    ProxyPassReverse / http://$LISTEN:$PORT/
     RequestHeader set X-Forwarded-Proto expr=%{REQUEST_SCHEME}
     LimitRequestBody 83886080
 </VirtualHost>
@@ -140,7 +147,7 @@ else
   if ! systemctl is-active --quiet nginx && ss -ltn "( sport = :80 )" | grep -q LISTEN; then
     echo "Le port 80 est utilisé par un serveur web qui n'est ni Apache ni Nginx :"
     ss -ltnp "( sport = :80 )"
-    echo "MonAuto tourne sur 127.0.0.1:$PORT ; il reste à le relier à ce serveur web."
+    echo "MonAuto tourne sur $LISTEN:$PORT ; il reste à le relier à ce serveur web, puis à relancer avec WEB_SERVER=external."
     exit 1
   fi
   apt-get install -y -q nginx
@@ -154,7 +161,7 @@ server {
     client_max_body_size 80m;
 
     location / {
-        proxy_pass http://127.0.0.1:$PORT;
+        proxy_pass http://$LISTEN:$PORT;
         proxy_set_header Host \$host;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
@@ -181,7 +188,9 @@ cat > /etc/cron.d/monauto <<CRON
 CRON
 
 say "HTTPS"
-if [ -z "$CERTBOT_EMAIL" ]; then
+if [ "$web" = external ]; then
+  echo "Le certificat HTTPS est géré par le serveur web existant."
+elif [ -z "$CERTBOT_EMAIL" ]; then
   echo "Certificat non demandé : relancez avec CERTBOT_EMAIL=votre@adresse quand $DOMAIN pointe vers ce serveur."
 else
   apt-get install -y -q certbot "python3-certbot-$web"
@@ -193,6 +202,6 @@ fi
 
 say "Terminé"
 systemctl --no-pager --lines=0 status monauto || true
-echo "MonAuto écoute sur 127.0.0.1:$PORT, publié par $web pour $DOMAIN."
+echo "MonAuto écoute sur $LISTEN:$PORT, publié par $web pour $DOMAIN."
 grep -q '^SMTP_URL=""' "$WEB/.env" && echo "À faire : renseigner SMTP_URL dans $WEB/.env, sinon personne ne pourra se connecter (voir docs/MISE_EN_LIGNE.md)."
 exit 0

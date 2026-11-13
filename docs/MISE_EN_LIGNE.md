@@ -122,6 +122,14 @@ Lire ses derniers messages en cas de problème :
 sudo journalctl -u monauto -n 50 --no-pager
 ```
 
+## Si les autres sites passent par un serveur web dans Docker (Caddy, Traefik…)
+
+C'est le cas quand l'installation s'arrête sur « Le port 80 est utilisé par un serveur web qui n'est ni Apache ni Nginx » et cite `docker-proxy`. Le serveur web dans Docker garde la main sur les ports 80 et 443, et gère le HTTPS.
+
+1. Relancer l'installation pour que MonAuto écoute sur la passerelle du réseau Docker de ce serveur web (son adresse se lit avec `docker inspect <conteneur>`), sans configurer Nginx, Apache ni certbot : `sudo WEB_SERVER=external LISTEN=<passerelle> bash /root/install-monauto.sh`.
+2. Ajouter `monauto.org` à la configuration de ce serveur web, vers `http://<passerelle>:3100`. Pour Caddy : un bloc `monauto.org, www.monauto.org { reverse_proxy <passerelle>:3100 }` dans son Caddyfile, puis `caddy validate` et `caddy reload` dans le conteneur.
+3. Si le pare-feu du serveur (ufw) est actif, autoriser le port 3100 depuis ce réseau Docker seulement.
+
 ## Pour un technicien
 
 - Fichiers : `deploy/install.sh`, `deploy/update.sh`, `deploy/daily.sh` ; service `/etc/systemd/system/monauto.service` ; tâche `/etc/cron.d/monauto` ; journal de nuit `/var/log/monauto-daily.log`.
