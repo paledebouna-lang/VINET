@@ -95,7 +95,8 @@ say "Service monauto (démarrage automatique)"
 cat > /etc/systemd/system/monauto.service <<UNIT
 [Unit]
 Description=MonAuto
-After=network.target postgresql.service
+# docker.service: LISTEN may be the gateway of a Docker network, which exists only once Docker is up.
+After=network.target postgresql.service docker.service
 
 [Service]
 User=monauto
