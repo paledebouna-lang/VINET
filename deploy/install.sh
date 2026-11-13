@@ -77,7 +77,7 @@ BETTER_AUTH_URL="https://$DOMAIN"
 # Encrypts VINET beacon keys. Write it down somewhere safe: without it, beacons must be registered again.
 VINET_SECRET="$(openssl rand -base64 32)"
 UPLOAD_DIR="$DATA/uploads"
-# E-mail codes and notifications: smtps://adresse%40$DOMAIN:mot-de-passe@serveur-smtp:465 (see docs/MISE_EN_LIGNE.md)
+# E-mail codes and notifications. Set it with the command of docs/MISE_EN_LIGNE.md, step 3, not by hand.
 SMTP_URL=""
 MAIL_FROM="MonAuto <no-reply@$DOMAIN>"
 # Set to 1 once an SMS provider is wired: sign-in by phone is then offered.

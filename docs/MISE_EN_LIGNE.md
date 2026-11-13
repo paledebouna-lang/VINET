@@ -45,24 +45,25 @@ Sans cette étape, personne ne peut se connecter : les codes de connexion parten
 
 1. Dans l'espace client LWS, créez la boîte **no-reply@monauto.org**. Donnez-lui un mot de passe fait **uniquement de lettres et de chiffres** (au moins 20 caractères) : les autres caractères devraient être convertis.
 2. Relevez le **serveur SMTP** indiqué par LWS pour cette boîte.
-3. Ouvrez le fichier de configuration :
+3. Collez cette commande. Elle demande le mot de passe de la boîte **sans l'afficher** (rien ne bouge quand vous tapez : c'est normal), puis l'enregistre dans la configuration. Remplacez `mail.monauto.org` si LWS indique un autre serveur SMTP.
 
 ```bash
-sudo nano /opt/monauto/app/web/.env
+read -rsp "Mot de passe de no-reply@monauto.org : " p; echo; sed -i "s#^SMTP_URL=.*#SMTP_URL=\"smtps://no-reply%40monauto.org:$p@mail.monauto.org:465\"#" /opt/monauto/app/web/.env; unset p
 ```
 
-4. Remplacez la ligne `SMTP_URL=""` par la vôtre, sur ce modèle (le `@` de l'adresse s'écrit `%40`) :
+4. Vérifiez la ligne enregistrée ; le mot de passe y est remplacé par des étoiles :
 
-```
-SMTP_URL="smtps://no-reply%40monauto.org:MOT_DE_PASSE@SERVEUR_SMTP:465"
+```bash
+grep '^SMTP_URL=' /opt/monauto/app/web/.env | sed -E 's#:[^:@]+@#:****@#'
 ```
 
-5. Enregistrez avec **Ctrl+O**, puis **Entrée**, et quittez avec **Ctrl+X**.
-6. Redémarrez le site :
+5. Redémarrez le site :
 
 ```bash
 sudo systemctl restart monauto
 ```
+
+Ne montrez jamais le contenu complet du fichier `.env` (capture d'écran, message) : il contient les clés du site. Si cela arrive, voir « Changer les clés » plus bas.
 
 ## 4. Activer HTTPS
 
@@ -129,6 +130,14 @@ C'est le cas quand l'installation s'arrête sur « Le port 80 est utilisé par u
 1. Relancer l'installation pour que MonAuto écoute sur la passerelle du réseau Docker de ce serveur web (son adresse se lit avec `docker inspect <conteneur>`), sans configurer Nginx, Apache ni certbot : `sudo WEB_SERVER=external LISTEN=<passerelle> bash /root/install-monauto.sh`.
 2. Ajouter `monauto.org` à la configuration de ce serveur web, vers `http://<passerelle>:3100`. Pour Caddy : un bloc `monauto.org, www.monauto.org { reverse_proxy <passerelle>:3100 }` dans son Caddyfile, puis `caddy validate` et `caddy reload` dans le conteneur.
 3. Si le pare-feu du serveur (ufw) est actif, autoriser le port 3100 depuis ce réseau Docker seulement.
+
+## Changer les clés
+
+Si le fichier `.env` a été montré à quelqu'un : supprimez-le puis relancez l'installation avec les mêmes options qu'au départ. Elle crée de nouvelles clés et un nouveau mot de passe de base de données ; les annonces, comptes et photos sont conservés, mais tout le monde est déconnecté, et les balises VINET déjà enregistrées doivent l'être à nouveau. Refaites ensuite l'étape 3 avec un nouveau mot de passe de boîte e-mail.
+
+```bash
+sudo rm /opt/monauto/app/web/.env
+```
 
 ## Pour un technicien
 
