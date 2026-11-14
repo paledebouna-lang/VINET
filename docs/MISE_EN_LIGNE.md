@@ -43,12 +43,12 @@ L'installation se termine par « Terminé ». Si elle s'arrête avant, copiez le
 
 Sans cette étape, personne ne peut se connecter : les codes de connexion partent par e-mail tant que les SMS ne sont pas branchés.
 
-1. Dans l'espace client LWS, créez la boîte **no-reply@monauto.org**. Donnez-lui un mot de passe fait **uniquement de lettres et de chiffres** (au moins 20 caractères) : les autres caractères devraient être convertis.
+1. Dans l'espace client LWS, créez la boîte **no-reply@monauto.org**. Donnez-lui un mot de passe fait de lettres, de chiffres et, si LWS exige un signe, des seuls signes `-` `.` `_` `~` (au moins 20 caractères) : les autres signes devraient être convertis.
 2. Relevez le **serveur SMTP** indiqué par LWS pour cette boîte.
 3. Collez cette commande. Elle demande le mot de passe de la boîte **sans l'afficher** (rien ne bouge quand vous tapez : c'est normal), puis l'enregistre dans la configuration. Remplacez `mail.monauto.org` si LWS indique un autre serveur SMTP.
 
 ```bash
-read -rsp "Mot de passe de no-reply@monauto.org : " p; echo; if [[ "$p" =~ ^[A-Za-z0-9]+$ ]]; then sed -i "s#^SMTP_URL=.*#SMTP_URL=\"smtps://no-reply%40monauto.org:$p@mail.monauto.org:465\"#" /opt/monauto/app/web/.env; echo "Enregistré : ${#p} caractères."; else echo "Refusé : vide, ou contient autre chose que des lettres et des chiffres. Recommencez."; fi; unset p
+read -rsp "Mot de passe de no-reply@monauto.org : " p; echo; if [[ "$p" =~ ^[A-Za-z0-9._~-]+$ ]]; then sed -i "s#^SMTP_URL=.*#SMTP_URL=\"smtps://no-reply%40monauto.org:$p@mail.monauto.org:465\"#" /opt/monauto/app/web/.env; echo "Enregistré : ${#p} caractères."; else echo "Refusé : vide, ou contient un signe autre que - . _ ~. Recommencez."; fi; unset p
 ```
 
 4. Vérifiez la ligne enregistrée ; le mot de passe y est remplacé par des étoiles (s'il n'y a pas d'étoiles entre `:` et `@`, le mot de passe est vide : recommencez le point 3) :
