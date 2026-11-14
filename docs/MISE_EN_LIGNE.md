@@ -48,10 +48,10 @@ Sans cette étape, personne ne peut se connecter : les codes de connexion parten
 3. Collez cette commande. Elle demande le mot de passe de la boîte **sans l'afficher** (rien ne bouge quand vous tapez : c'est normal), puis l'enregistre dans la configuration. Remplacez `mail.monauto.org` si LWS indique un autre serveur SMTP.
 
 ```bash
-read -rsp "Mot de passe de no-reply@monauto.org : " p; echo; sed -i "s#^SMTP_URL=.*#SMTP_URL=\"smtps://no-reply%40monauto.org:$p@mail.monauto.org:465\"#" /opt/monauto/app/web/.env; unset p
+read -rsp "Mot de passe de no-reply@monauto.org : " p; echo; if [[ "$p" =~ ^[A-Za-z0-9]+$ ]]; then sed -i "s#^SMTP_URL=.*#SMTP_URL=\"smtps://no-reply%40monauto.org:$p@mail.monauto.org:465\"#" /opt/monauto/app/web/.env; echo "Enregistré : ${#p} caractères."; else echo "Refusé : vide, ou contient autre chose que des lettres et des chiffres. Recommencez."; fi; unset p
 ```
 
-4. Vérifiez la ligne enregistrée ; le mot de passe y est remplacé par des étoiles :
+4. Vérifiez la ligne enregistrée ; le mot de passe y est remplacé par des étoiles (s'il n'y a pas d'étoiles entre `:` et `@`, le mot de passe est vide : recommencez le point 3) :
 
 ```bash
 grep '^SMTP_URL=' /opt/monauto/app/web/.env | sed -E 's#:[^:@]+@#:****@#'
