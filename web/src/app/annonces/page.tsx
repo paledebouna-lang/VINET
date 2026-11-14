@@ -1,18 +1,47 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { CATEGORIES, COMMUNES, type CategoryKey, type KindKey } from "@/lib/listing";
+import { searchHeading } from "@/lib/seo";
 import { ListingGrid, cardSelect } from "../listing-card";
 
 export const instant = false;
 
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)?.trim() ?? "";
 
+// Anything not in the lists is ignored rather than trusted.
+function readFilters(params: Record<string, string | string[] | undefined>) {
+  return {
+    category: first(params.categorie) in CATEGORIES ? (first(params.categorie) as CategoryKey) : undefined,
+    kind: ["SALE", "RENT"].includes(first(params.type)) ? (first(params.type) as KindKey) : undefined,
+    commune: COMMUNES.find((c) => c === first(params.commune)),
+  };
+}
+
+export async function generateMetadata({ searchParams }: PageProps<"/annonces">): Promise<Metadata> {
+  const params = await searchParams;
+  const { category, kind, commune } = readFilters(params);
+  // One address per kind of search: free text and price limits point back to it.
+  const canonical = new URLSearchParams();
+  if (kind && category !== "PIECE") canonical.set("type", kind);
+  if (category) canonical.set("categorie", category);
+  if (commune) canonical.set("commune", commune);
+  const count = await prisma.listing.count({
+    where: { status: "PUBLISHED", kind: category === "PIECE" ? undefined : kind, category, commune },
+  });
+  const title = searchHeading(kind, category, commune);
+  return {
+    title,
+    description: `${count} annonce${count > 1 ? "s" : ""} : ${title.charAt(0).toLowerCase()}${title.slice(1)}. Vendeurs vérifiés, échanges sur MonAuto, passeport numérique AVS.`,
+    alternates: { canonical: `/annonces${canonical.size ? `?${canonical}` : ""}` },
+    // An empty search page is not worth a place in Google; its links still are.
+    robots: count ? undefined : { index: false, follow: true },
+  };
+}
+
 export default async function Annonces({ searchParams }: PageProps<"/annonces">) {
   const params = await searchParams;
   const q = first(params.q).slice(0, 60);
-  // Anything not in the lists is ignored rather than trusted.
-  const category = first(params.categorie) in CATEGORIES ? (first(params.categorie) as CategoryKey) : undefined;
-  const kind = ["SALE", "RENT"].includes(first(params.type)) ? (first(params.type) as KindKey) : undefined;
-  const commune = COMMUNES.find((c) => c === first(params.commune));
+  const { category, kind, commune } = readFilters(params);
   const maxPrice = /^\d{1,10}$/.test(first(params.prixMax)) ? Number(first(params.prixMax)) : undefined;
 
   // shortcut: substring match on brand, model and part name or reference; move to full-text search past a few thousand listings.
@@ -41,13 +70,7 @@ export default async function Annonces({ searchParams }: PageProps<"/annonces">)
   return (
     <div className="section wrap">
       <h1 className="page-title">
-        {category === "PIECE"
-          ? "Pièces détachées"
-          : kind === "RENT"
-            ? "Louer un véhicule"
-            : kind === "SALE"
-              ? "Acheter un véhicule"
-              : "Toutes les annonces"}
+        {searchHeading(kind, category, commune)}
       </h1>
       <form className="search card">
         <div className="field">

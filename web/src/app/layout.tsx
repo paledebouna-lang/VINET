@@ -3,11 +3,18 @@ import Link from "next/link";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/sora";
 import "./globals.css";
+import { siteUrl } from "@/lib/mail";
 
 export const metadata: Metadata = {
-  title: "MonAuto — Achat, vente et location de véhicules",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "MonAuto — Achat, vente et location de voitures à Abidjan",
+    // Every page names itself first, then the site.
+    template: "%s — MonAuto",
+  },
   description:
-    "Achetez, louez et vendez des voitures, motos et utilitaires en Côte d'Ivoire, avec vendeurs vérifiés et passeport numérique AVS.",
+    "Achetez, louez et vendez des voitures, motos, utilitaires et pièces détachées à Abidjan et en Côte d'Ivoire, avec vendeurs vérifiés et passeport numérique AVS.",
+  openGraph: { siteName: "MonAuto", locale: "fr_CI", type: "website" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

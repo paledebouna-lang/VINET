@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { CATEGORIES } from "@/lib/listing";
@@ -5,6 +6,8 @@ import { ListingGrid, cardSelect } from "./listing-card";
 
 // Shows the latest listings from the database, so it is rendered on each request.
 export const instant = false;
+// Set here and not in the layout: a canonical address in the layout would be inherited by every page.
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export default async function Home() {
   const latest = await prisma.listing.findMany({

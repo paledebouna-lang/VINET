@@ -1,15 +1,36 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { toggleFavorite } from "../../actions";
 import { prisma } from "@/lib/db";
 import { CATEGORIES, formatNumber, formatPrice, listingTitle, maskVin } from "@/lib/listing";
+import { siteUrl } from "@/lib/mail";
+import { jsonLdScript, listingDescription, listingHeadline, listingJsonLd } from "@/lib/seo";
 import { getUser } from "@/lib/session";
 import { BookingForm } from "../../locations/forms";
 import { formatDay, isoDay, today } from "@/lib/rental";
 import { MessageForm, ReportForm } from "./forms";
 
 export const instant = false;
+
+export async function generateMetadata({ params }: PageProps<"/annonces/[id]">): Promise<Metadata> {
+  const { id } = await params;
+  const listing = await prisma.listing.findUnique({
+    where: { id },
+    include: { photos: { orderBy: { position: "asc" }, take: 4, select: { id: true } } },
+  });
+  // Only a published listing is shown to search engines; the page itself decides who else may see it.
+  if (!listing || listing.status !== "PUBLISHED") return { robots: { index: false, follow: false } };
+  const title = listingHeadline(listing);
+  const description = listingDescription(listing);
+  return {
+    title,
+    description,
+    alternates: { canonical: `/annonces/${id}` },
+    openGraph: { title, description, url: `/annonces/${id}`, images: listing.photos.map((p) => `/photos/${p.id}`) },
+  };
+}
 
 export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
   // The page depends on today's date (days already booked), so it is rendered at request time.
@@ -45,6 +66,9 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
 
   return (
     <div className="section wrap">
+      {listing.status === "PUBLISHED" && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(listingJsonLd(listing, siteUrl)) }} />
+      )}
       {listing.status !== "PUBLISHED" && (
         <p className="alert">Aperçu : cette annonce n&apos;est pas en ligne.</p>
       )}
