@@ -138,7 +138,7 @@ Reste à faire :
 - **Pays et devises** : un seul pays et une seule devise pour le MVP ; le reste arrive au lot 10.
 - Un litige se conclut par une réponse de l'équipe, sans remboursement ni pénalité automatiques.
 
-Sortie : **MVP marketplace**. Les fonctions sont là et vérifiées en local ; la mise en ligne attend le VPS, les SMS, CinetPay et la double vérification.
+Sortie : **MVP marketplace**. Les fonctions sont là et vérifiées en local ; le site est en ligne sur monauto.org avec la double vérification des administrateurs ; restent les SMS et CinetPay.
 
 ### Lot 5 — Passeport AVS et QR
 
