@@ -45,6 +45,7 @@ model User {
   theftCases          TheftCase[]
   caseEvents          CaseEvent[]
   sessions            Session[]
+  adminMfa            AdminMfa?
   accounts            Account[]
   listings            Listing[]
   conversations       Conversation[]
@@ -69,6 +70,8 @@ model Session {
   userAgent String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // When an admin typed the code of their authenticator app in this session. Admin rights need it.
+  mfaVerifiedAt DateTime?
 
   @@unique([token])
   @@index([userId])
@@ -630,4 +633,19 @@ model Detection {
   @@unique([beaconId, detectorId, detectedAt])
   @@index([detectedAt])
   @@map("detection")
+}
+
+// Second factor of an admin account: the secret shared with an authenticator app (RFC 6238).
+// Kept apart from the user row, which the sign-in library reads and sends to the browser.
+model AdminMfa {
+  userId        String    @id
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Sealed with VINET_SECRET, like beacon keys. Pending until the first code is typed.
+  sealedSecret  String?
+  pendingSecret String?
+  // The last time step used: a code is accepted once.
+  lastStep      Int       @default(-1)
+  enabledAt     DateTime?
+
+  @@map("admin_mfa")
 }

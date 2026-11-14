@@ -1,9 +1,7 @@
-import { headers } from "next/headers";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { matriculeOf } from "@/lib/listing";
+import { requireUser } from "@/lib/session";
 import { EmailForm } from "./email-form";
 import { SignOutButton } from "./sign-out-button";
 
@@ -17,9 +15,7 @@ const roleLabels: Record<string, string> = {
 };
 
 export default async function Compte() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/connexion");
-  const { user } = session;
+  const user = await requireUser();
   const { memberNumber, sellerProfile } = await prisma.user.findUniqueOrThrow({
     where: { id: user.id },
     select: { memberNumber: true, sellerProfile: { select: { company: true } } },
@@ -50,7 +46,7 @@ export default async function Compte() {
           )}
           <div>
             <dt>Profil</dt>
-            <dd>{roleLabels[user.role] ?? user.role}</dd>
+            <dd>{user.adminPending ? "Administrateur (double vérification à faire)" : (roleLabels[user.role] ?? user.role)}</dd>
           </div>
         </dl>
         {!hasEmail && <EmailForm />}
@@ -72,10 +68,20 @@ export default async function Compte() {
         <Link href="/compte/identite" className="btn btn-ghost">
           Identité du vendeur
         </Link>
-        {user.role === "admin" && (
-          <Link href="/admin" className="btn btn-ghost">
-            Modération
+        {user.adminPending && (
+          <Link href="/compte/securite" className="btn btn-primary">
+            Double vérification pour ouvrir l&apos;administration
           </Link>
+        )}
+        {user.role === "admin" && (
+          <>
+            <Link href="/admin" className="btn btn-ghost">
+              Modération
+            </Link>
+            <Link href="/compte/securite" className="btn btn-ghost">
+              Double vérification
+            </Link>
+          </>
         )}
         <SignOutButton />
       </div>

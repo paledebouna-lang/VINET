@@ -86,7 +86,13 @@ Dans le panneau du VPS, rubrique **Firewall**, vérifiez que les ports **80** et
 sudo -u monauto bash -c 'cd /opt/monauto/app/web && /opt/monauto/node/bin/node --env-file=.env scripts/set-role.mjs votre@adresse.ci admin'
 ```
 
-Déconnectez-vous puis reconnectez-vous : le menu « Modération » apparaît dans « Mon compte ».
+Déconnectez-vous puis reconnectez-vous. Dans « Mon compte », le bouton « Double vérification pour ouvrir l'administration » apparaît : un administrateur doit, en plus du code reçu par e-mail, taper un code donné par une application d'authentification sur son téléphone (Google Authenticator, Microsoft Authenticator…). À la première visite, scannez le QR code affiché, puis tapez le code de l'application. Ensuite, ce code est demandé à chaque nouvelle connexion.
+
+**Téléphone perdu ou changé** : la double vérification se réinitialise depuis le serveur seulement ; à la visite suivante, l'administrateur configure sa nouvelle application.
+
+```bash
+sudo -u monauto bash -c 'cd /opt/monauto/app/web && /opt/monauto/node/bin/node --env-file=.env scripts/reset-mfa.mjs votre@adresse.ci'
+```
 
 ## 6. Mettre les secrets à l'abri
 
@@ -96,7 +102,7 @@ Le fichier `.env` contient trois secrets créés à l'installation. Notez-les da
 sudo grep -E '^(BETTER_AUTH_SECRET|VINET_SECRET|DATABASE_URL)=' /opt/monauto/app/web/.env
 ```
 
-- Sans `VINET_SECRET`, les balises VINET enregistrées devraient l'être à nouveau.
+- Sans `VINET_SECRET`, les balises VINET enregistrées devraient l'être à nouveau, et chaque administrateur devrait reconfigurer sa double vérification.
 - Les sauvegardes de nuit ne contiennent pas ces secrets, volontairement.
 
 ## 7. Sauvegardes hors du serveur

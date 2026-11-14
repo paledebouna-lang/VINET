@@ -36,7 +36,7 @@ La personne se connecte une première fois sur le site, puis :
 node --env-file=.env scripts/set-role.mjs +2250708091011 admin
 ```
 
-La modération se trouve ensuite sur `/admin`.
+La modération se trouve ensuite sur `/admin`, après la double vérification : l'administrateur configure une application d'authentification sur `/compte/securite`. Téléphone perdu : `node --env-file=.env scripts/reset-mfa.mjs <contact>`.
 
 ## Balises GPS
 

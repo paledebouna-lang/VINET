@@ -247,7 +247,7 @@ Fait :
 Reste à faire, avant le lancement (le détail est dans le plan du pilote) :
 
 - **Site en ligne sur https://monauto.org** depuis le 14 novembre 2026 : installé sur le VPS (Ubuntu 24.04) à côté des autres sites, publié par le Caddy déjà présent dans Docker, qui gère le HTTPS ; codes de connexion envoyés par la boîte no-reply@monauto.org. Restent : désigner l'administrateur, activer une sauvegarde LWS hors du serveur. Tant que les SMS ne sont pas branchés, la connexion se fait par e-mail seulement.
-- Décider de la **double vérification** des comptes administrateur et agence (recommandée).
+- **Double vérification des administrateurs : faite.** En plus du code e-mail, un code d'application d'authentification (norme RFC 6238) est demandé à chaque nouvelle session ; sans lui, un compte administrateur n'a aucun droit d'administrateur nulle part sur le site. Clé chiffrée, code utilisable une fois, blocage 15 minutes après 5 codes faux, journalisé, réinitialisation depuis le serveur seulement. Les comptes agence n'y sont pas soumis : à décider.
 - Choisir la **balise GPS** réelle et le **fournisseur de fonds de carte**.
 - Faire relire par le juriste le contrat de location, les engagements de vol, la lettre d'engagement des agences et l'accord des propriétaires.
 - Valider les chiffres et les cibles du plan, choisir les agences, former l'équipe.
