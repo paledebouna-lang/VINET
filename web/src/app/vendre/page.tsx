@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { writingHelpEnabled } from "@/lib/writing-help";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
@@ -18,7 +19,8 @@ export default async function Vendre() {
         Votre annonce est vérifiée par notre équipe avant d&apos;être publiée. Les acheteurs vous écrivent
         sur MonAuto : ni votre numéro ni votre e-mail ne sont affichés.
       </p>
-      <ListingForm passports={passports} />
+      <ListingForm
+        writingHelp={writingHelpEnabled()} passports={passports} />
       {passports.length === 0 && (
         <p className="muted small">
           Donnez d&apos;abord un <Link href="/vehicules">passeport AVS</Link> à votre véhicule pour que les acheteurs

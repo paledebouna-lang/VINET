@@ -109,6 +109,26 @@ sudo grep -E '^(BETTER_AUTH_SECRET|VINET_SECRET|DATABASE_URL)=' /opt/monauto/app
 
 Les sauvegardes de nuit restent sur le VPS : elles ne protègent pas d'une panne du serveur. Activez aussi les **Sauvegardes** ou les **Snapshots** du panneau LWS, ou copiez régulièrement `/var/backups/monauto` ailleurs.
 
+## Activer l'aide à la rédaction des annonces (facultatif)
+
+Le bouton « Proposer une description » du formulaire de dépôt rédige une description à partir des informations du véhicule, avec Claude (Anthropic). Le vendeur la relit et la corrige. Seules les informations du véhicule et les notes du vendeur sont envoyées à Anthropic, jamais son nom, son téléphone ou son e-mail. Sans clé, le bouton n'apparaît pas.
+
+1. Créez un compte sur https://console.anthropic.com, ajoutez un moyen de paiement, puis **fixez une limite de dépenses mensuelle** (Settings, Limits).
+2. Créez une clé d'API (API Keys, « Create Key ») et copiez-la. Elle commence par `sk-ant-`.
+3. Dans le Terminal SSH, collez cette commande : elle demande la clé sans l'afficher, puis l'enregistre.
+
+```bash
+read -rsp "Clé Anthropic : " k; echo; if [[ "$k" =~ ^sk-ant-[A-Za-z0-9_-]+$ ]]; then f=/opt/monauto/app/web/.env; sed -i '/^ANTHROPIC_API_KEY=/d' $f; echo "ANTHROPIC_API_KEY=\"$k\"" >> $f; echo "Clé enregistrée."; else echo "Refusé : une clé commence par sk-ant-. Recommencez."; fi; unset k
+```
+
+4. Redémarrez le site :
+
+```bash
+sudo systemctl restart monauto
+```
+
+Coût indicatif : environ 1 centime de dollar par proposition (moins de 10 FCFA). Chaque compte est limité à 10 propositions par heure et 30 par jour. Pour couper l'aide, supprimez la ligne `ANTHROPIC_API_KEY` du fichier `.env` et redémarrez.
+
 ## Au quotidien
 
 Mettre en ligne la dernière version (une sauvegarde est faite d'abord ; le site peut être indisponible une minute) :

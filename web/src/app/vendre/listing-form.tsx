@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState, useTransition } from "react";
 import { type FormState, createListing, updateListing } from "../actions";
 import { FieldError } from "../field-error";
+import { proposeDescription } from "../writing-actions";
 import { CATEGORIES, COMMUNES, FUELS, KINDS, PART_CONDITIONS, TRANSMISSIONS } from "@/lib/listing";
 
 type Existing = { id: string; values: Record<string, string>; photoIds: string[]; hasInsurance: boolean };
@@ -10,7 +11,15 @@ type Existing = { id: string; values: Record<string, string>; photoIds: string[]
 /** Creates a listing, or edits `existing` when given. */
 type Passport = { id: string; label: string };
 
-export function ListingForm({ existing, passports }: { existing?: Existing; passports: Passport[] }) {
+export function ListingForm({
+  existing,
+  passports,
+  writingHelp = false,
+}: {
+  existing?: Existing;
+  passports: Passport[];
+  writingHelp?: boolean;
+}) {
   const [state, action, pending] = useActionState<FormState, FormData>(
     existing ? updateListing : createListing,
     {},
@@ -21,6 +30,23 @@ export function ListingForm({ existing, passports }: { existing?: Existing; pass
   const isPart = category === "PIECE";
   // A spare part is only ever sold.
   const isRent = kind === "RENT" && !isPart;
+  const form = useRef<HTMLFormElement>(null);
+  const description = useRef<HTMLTextAreaElement>(null);
+  const [suggesting, startSuggesting] = useTransition();
+  const [help, setHelp] = useState<string | null>(null);
+  // The suggestion replaces the text in the field; the seller reads and corrects it before sending.
+  const suggest = () =>
+    startSuggesting(async () => {
+      setHelp(null);
+      const result = await proposeDescription(new FormData(form.current!));
+      if (result.text && description.current) {
+        description.current.value = result.text;
+        description.current.focus();
+        setHelp("Proposition insérée. Relisez-la et corrigez-la : vous restez responsable de votre annonce.");
+      } else {
+        setHelp(result.error ?? null);
+      }
+    });
 
   // One labelled text input wired to its server-side error.
   const input = (name: string, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
@@ -60,7 +86,7 @@ export function ListingForm({ existing, passports }: { existing?: Existing; pass
   );
 
   return (
-    <form action={action} className="card stack">
+    <form ref={form} action={action} className="card stack">
       {existing && <input type="hidden" name="id" value={existing.id} />}
       <div className="field">
         <label htmlFor="category">Catégorie</label>
@@ -182,14 +208,25 @@ export function ListingForm({ existing, passports }: { existing?: Existing; pass
       <div className="field">
         <label htmlFor="description">Description</label>
         <textarea
+          ref={description}
           id="description"
           name="description"
           rows={5}
           defaultValue={v.description}
-          aria-describedby="description-error"
+          aria-describedby="description-error description-help"
           required
         />
         <FieldError state={state} name="description" />
+        {writingHelp && (
+          <div className="row start">
+            <button type="button" className="btn btn-ghost" onClick={suggest} disabled={suggesting}>
+              {suggesting ? "Rédaction en cours…" : "Proposer une description"}
+            </button>
+            <small id="description-help" aria-live="polite">
+              {help ?? "Remplissez les champs ci-dessus, ajoutez vos notes si vous voulez, puis demandez une proposition."}
+            </small>
+          </div>
+        )}
       </div>
 
       {existing && existing.photoIds.length > 0 && (

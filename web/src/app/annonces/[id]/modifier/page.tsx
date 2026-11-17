@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { writingHelpEnabled } from "@/lib/writing-help";
 import { ListingForm } from "../../../vendre/listing-form";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
@@ -21,6 +22,7 @@ export default async function Modifier({ params }: PageProps<"/annonces/[id]/mod
     <div className="section wrap medium">
       <h1 className="page-title">Modifier mon annonce</h1>
       <ListingForm
+        writingHelp={writingHelpEnabled()}
         passports={vehicles.map((v) => ({ id: v.id, label: `${v.brand} ${v.model} ${v.year} · ${v.avsId}` }))}
         existing={{
           id,

@@ -271,7 +271,9 @@ Six projets indépendants, menés un par un à la demande, après le bilan du pi
 - Bateaux et avions : seulement avec des opérateurs agréés ; règles à établir avec le juriste.
 - Enchères : règles (durée, dépôt, paiement) et avis du juriste sur la réglementation des enchères en Côte d'Ivoire.
 - Assurance et financement : partenaires à choisir.
-- IA : aide à la rédaction des annonces, estimation de prix : à préciser.
+- IA : estimation de prix, à préciser.
+
+**Aide à la rédaction des annonces — fait.** Bouton « Proposer une description » dans le formulaire de dépôt : Claude (Anthropic) rédige une description à partir des seules informations du véhicule et des notes du vendeur, sans rien inventer ; le vendeur la relit et la corrige. Ni nom, ni téléphone, ni e-mail ne sont envoyés ; coordonnées masquées dans la proposition comme ailleurs ; 10 propositions par heure et 30 par jour par compte. Activée seulement si une clé Anthropic est configurée sur le serveur (docs/MISE_EN_LIGNE.md). À faire confirmer par le juriste : mention du transfert de ces informations à Anthropic dans la politique de confidentialité.
 
 **Annonces douteuses — fait.** À chaque dépôt ou modification, le site vérifie l'annonce et écrit ses alertes pour la modération, qui les voit en tête de file : numéro de série d'un véhicule déclaré volé (publication bloquée, équipe prévenue), numéro de série déjà utilisé par un autre vendeur, prix inférieur à la moitié du prix habituel d'au moins 3 annonces comparables (même modèle, à 2 ans près, publiées dans l'année), description ou photo copiée d'un autre vendeur (empreinte de la photo qui résiste au redimensionnement et à la recompression), tentative d'afficher un numéro ou un e-mail. Rien n'est refusé automatiquement, sauf le véhicule volé. Limites : une photo recadrée ou entourée de bandes n'est pas reconnue ; les comparaisons se font en mémoire, à revoir au-delà d'environ 20 000 annonces.
 
