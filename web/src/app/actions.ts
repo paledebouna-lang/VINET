@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { checkListing } from "@/lib/listing-checks";
 import { formatPrice, listingTitle, maskContacts, parseListing, rentalInput, sellerProfileInput } from "@/lib/listing";
 import { notify, siteUrl as site } from "@/lib/mail";
 import { MAX_PHOTO_BYTES, MAX_PHOTOS, deletePhotos, storePhotos } from "@/lib/photos";
@@ -47,6 +48,10 @@ export async function saveSellerProfile(_prev: FormState, formData: FormData): P
   revalidatePath("/", "layout");
   return { ok: true, values };
 }
+
+/** The moderation warnings. A failure here must not lose the seller's listing, which is already saved. */
+const runChecks = (listingId: string) =>
+  checkListing(listingId).catch((e) => console.error("listing checks failed", listingId, e));
 
 /** The passport chosen in the form, if it really is one of this seller's vehicles. */
 async function ownVehicleId(values: Record<string, string>, userId: string) {
@@ -118,8 +123,9 @@ export async function createListing(_prev: FormState, formData: FormData): Promi
   } catch {
     return { errors: { photos: unreadableImage }, values };
   }
+  let created;
   try {
-    await prisma.listing.create({
+    created = await prisma.listing.create({
       data: {
         ...form.data,
         vehicleId: await ownVehicleId(values, user.id),
@@ -132,6 +138,7 @@ export async function createListing(_prev: FormState, formData: FormData): Promi
     await deletePhotos([...photoIds, ...insuranceIds]);
     throw e;
   }
+  await runChecks(created.id);
   redirect("/mes-annonces");
 }
 
@@ -188,6 +195,7 @@ export async function updateListing(_prev: FormState, formData: FormData): Promi
     throw e;
   }
   await deletePhotos([...removed, ...oldInsurance]);
+  await runChecks(id);
   redirect("/mes-annonces");
 }
 
@@ -212,8 +220,9 @@ export async function moderateListing(_prev: FormState, formData: FormData): Pro
   }
 
   const before = await prisma.listing.findUnique({ where: { id }, include: { seller: true } });
-  // A vehicle under an active theft search is never put on offer.
-  if (publish && before?.vehicleId && (await prisma.theftCase.count({ where: { vehicleId: before.vehicleId, status: "ACTIVE" } }))) {
+  // A vehicle under an active theft search is never put on offer: found by its passport or its serial number.
+  const vehicle = [before?.vehicleId && { id: before.vehicleId }, before?.vin && { serial: before.vin }].filter((v) => !!v);
+  if (publish && vehicle.length && (await prisma.theftCase.count({ where: { status: "ACTIVE", vehicle: { OR: vehicle } } }))) {
     return { errors: { reason: ["Ce véhicule est déclaré volé : l'annonce ne peut pas être publiée."] } };
   }
   // The status filter makes a double click, or two admins, decide only once.

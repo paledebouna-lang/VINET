@@ -271,7 +271,9 @@ Six projets indépendants, menés un par un à la demande, après le bilan du pi
 - Bateaux et avions : seulement avec des opérateurs agréés ; règles à établir avec le juriste.
 - Enchères : règles (durée, dépôt, paiement) et avis du juriste sur la réglementation des enchères en Côte d'Ivoire.
 - Assurance et financement : partenaires à choisir.
-- IA : usage à préciser (aide à la rédaction des annonces, estimation de prix, détection d'annonces frauduleuses).
+- IA : aide à la rédaction des annonces, estimation de prix : à préciser.
+
+**Annonces douteuses — fait.** À chaque dépôt ou modification, le site vérifie l'annonce et écrit ses alertes pour la modération, qui les voit en tête de file : numéro de série d'un véhicule déclaré volé (publication bloquée, équipe prévenue), numéro de série déjà utilisé par un autre vendeur, prix inférieur à la moitié du prix habituel d'au moins 3 annonces comparables (même modèle, à 2 ans près, publiées dans l'année), description ou photo copiée d'un autre vendeur (empreinte de la photo qui résiste au redimensionnement et à la recompression), tentative d'afficher un numéro ou un e-mail. Rien n'est refusé automatiquement, sauf le véhicule volé. Limites : une photo recadrée ou entourée de bandes n'est pas reconnue ; les comparaisons se font en mémoire, à revoir au-delà d'environ 20 000 annonces.
 
 ## 4. Règles valables pour tous les lots
 

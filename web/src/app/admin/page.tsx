@@ -34,6 +34,9 @@ export default async function Admin() {
     }),
   ]);
 
+  // Listings with warnings come first: they are the ones to look at closely.
+  const flagged = pending.filter((l) => l.riskFlags.length > 0);
+
   return (
     <div className="section wrap medium">
       <h1 className="page-title">Modération</h1>
@@ -85,11 +88,26 @@ export default async function Admin() {
         ))}
       </div>
 
-      <h2 className="sub-title spaced">Annonces en attente ({pending.length})</h2>
+      <h2 className="sub-title spaced">
+        Annonces en attente ({pending.length}
+        {flagged.length > 0 && `, dont ${flagged.length} à vérifier en priorité`})
+      </h2>
       {pending.length === 0 && <p className="muted">Aucune annonce à valider.</p>}
       <div className="stack">
-        {pending.map((listing) => (
+        {[...flagged, ...pending.filter((l) => l.riskFlags.length === 0)].map((listing) => (
           <article key={listing.id} className="card stack">
+            {listing.riskFlags.length > 0 && (
+              <div className="alert" role="note">
+                <p>
+                  <strong>À vérifier avant de publier :</strong>
+                </p>
+                <ul className="plain">
+                  {listing.riskFlags.map((flag) => (
+                    <li key={flag}>{flag}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div>
               <h3 className="card-title">
                 {listingTitle(listing)}

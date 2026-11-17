@@ -173,6 +173,8 @@ model Listing {
   // Never shown in full to the public: see maskVin.
   vin               String?
   rejectionReason   String?
+  // Warnings for the moderators, written when the listing is submitted (lib/listing-checks.ts).
+  riskFlags         String[]       @default([])
   createdAt         DateTime       @default(now())
   publishedAt       DateTime?
   // Last time the listing went to moderation: its creation, or its last edit.
@@ -193,6 +195,8 @@ model ListingPhoto {
   listingId String
   listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
   position  Int
+  // Perceptual hash of the photo (lib/fraud.ts), to spot the same photo in another listing.
+  phash     String?
 
   @@index([listingId, position])
   @@map("listing_photo")
