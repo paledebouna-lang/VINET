@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState, useTransition } from "react";
 import { type FormState, createListing, updateListing } from "../actions";
 import { FieldError } from "../field-error";
+import { estimatePrice } from "../price-actions";
 import { proposeDescription } from "../writing-actions";
 import { CATEGORIES, COMMUNES, FUELS, KINDS, PART_CONDITIONS, TRANSMISSIONS } from "@/lib/listing";
 
@@ -34,6 +35,9 @@ export function ListingForm({
   const description = useRef<HTMLTextAreaElement>(null);
   const [suggesting, startSuggesting] = useTransition();
   const [help, setHelp] = useState<string | null>(null);
+  const [estimating, startEstimating] = useTransition();
+  const [estimate, setEstimate] = useState<string | null>(null);
+  const showEstimate = () => startEstimating(async () => setEstimate(await estimatePrice(new FormData(form.current!))));
   // The suggestion replaces the text in the field; the seller reads and corrects it before sending.
   const suggest = () =>
     startSuggesting(async () => {
@@ -166,6 +170,12 @@ export function ListingForm({
           })}
           {select("commune", "Commune", COMMUNES)}
           {input("vin", "Numéro de série (VIN), facultatif", { required: false, maxLength: 17 })}
+          <div className="full-row row start">
+            <button type="button" className="btn btn-ghost" onClick={showEstimate} disabled={estimating}>
+              {estimating ? "Recherche…" : "Voir le prix habituel"}
+            </button>
+            <small id="price-estimate" aria-live="polite">{estimate ?? "D'après les annonces comparables publiées sur MonAuto."}</small>
+          </div>
         </div>
       )}
       <p className="muted small">

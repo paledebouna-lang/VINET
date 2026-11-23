@@ -10,6 +10,30 @@ const YEAR_MS = 365 * 86_400_000;
 const MIN_COPIED_TEXT = 40;
 const OPEN = ["PENDING", "PUBLISHED"] as const;
 
+type Comparable = { kind: "SALE" | "RENT"; category: "VOITURE" | "MOTO" | "UTILITAIRE" | "PIECE"; brand: string; model: string; year: number };
+
+/**
+ * Prices of published listings like this one: same kind (sale or rental), category, brand and model,
+ * two years either side, published within the year. Used for the usual price and the low-price warning.
+ */
+export async function comparablePrices(l: Comparable, excludeId?: string) {
+  const rows = await prisma.listing.findMany({
+    where: {
+      id: excludeId ? { not: excludeId } : undefined,
+      status: "PUBLISHED",
+      kind: l.kind,
+      category: l.category,
+      brand: { equals: l.brand.trim(), mode: "insensitive" },
+      model: { equals: l.model.trim(), mode: "insensitive" },
+      year: { gte: l.year - 2, lte: l.year + 2 },
+      publishedAt: { gte: new Date(Date.now() - YEAR_MS) },
+    },
+    select: { priceFcfa: true },
+    take: 200,
+  });
+  return rows.map((r) => r.priceFcfa);
+}
+
 /** Computes and stores a photo's fingerprint; a file that cannot be read is skipped. */
 async function fingerprint(photoId: string) {
   const phash = await photoHash(photoPath(photoId, true)).catch(() => null);
@@ -39,21 +63,7 @@ export async function checkListing(listingId: string) {
   }
 
   if (listing.category !== "PIECE" && listing.year !== null) {
-    const comparables = await prisma.listing.findMany({
-      where: {
-        id: { not: listing.id },
-        status: "PUBLISHED",
-        kind: listing.kind,
-        category: listing.category,
-        brand: { equals: listing.brand, mode: "insensitive" },
-        model: { equals: listing.model, mode: "insensitive" },
-        year: { gte: listing.year - 2, lte: listing.year + 2 },
-        publishedAt: { gte: new Date(Date.now() - YEAR_MS) },
-      },
-      select: { priceFcfa: true },
-      take: 200,
-    });
-    const warning = priceWarning(listing.priceFcfa, comparables.map((c) => c.priceFcfa));
+    const warning = priceWarning(listing.priceFcfa, await comparablePrices({ ...listing, year: listing.year }, listing.id));
     if (warning) flags.push(warning);
   }
 

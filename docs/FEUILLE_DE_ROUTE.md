@@ -271,9 +271,11 @@ Six projets indépendants, menés un par un à la demande, après le bilan du pi
 - Bateaux et avions : seulement avec des opérateurs agréés ; règles à établir avec le juriste.
 - Enchères : règles (durée, dépôt, paiement) et avis du juriste sur la réglementation des enchères en Côte d'Ivoire.
 - Assurance et financement : partenaires à choisir.
-- IA : estimation de prix, à préciser.
+- IA : estimation de prix — fait (voir plus bas).
 
 **Aide à la rédaction des annonces — fait.** Bouton « Proposer une description » dans le formulaire de dépôt : Claude (Anthropic) rédige une description à partir des seules informations du véhicule et des notes du vendeur, sans rien inventer ; le vendeur la relit et la corrige. Ni nom, ni téléphone, ni e-mail ne sont envoyés ; coordonnées masquées dans la proposition comme ailleurs ; 10 propositions par heure et 30 par jour par compte. Activée seulement si une clé Anthropic est configurée sur le serveur (docs/MISE_EN_LIGNE.md). À faire confirmer par le juriste : mention du transfert de ces informations à Anthropic dans la politique de confidentialité.
+
+**Estimation de prix — fait.** Bouton « Voir le prix habituel » sous le prix, dans le formulaire de dépôt d'un véhicule (pas des pièces) : prix médian et fourchette où se situe la moitié des annonces comparables publiées sur MonAuto dans l'année (même type vente ou location, même catégorie, même marque et modèle, à 2 ans près). Rien n'est affiché sous 3 annonces comparables : au lancement, le bouton répondra surtout « pas encore assez d'annonces ». Même recherche que l'alerte de prix anormalement bas. Ne tient compte ni du kilométrage ni de l'état ; ce sont des prix demandés, pas des prix de vente.
 
 **Annonces douteuses — fait.** À chaque dépôt ou modification, le site vérifie l'annonce et écrit ses alertes pour la modération, qui les voit en tête de file : numéro de série d'un véhicule déclaré volé (publication bloquée, équipe prévenue), numéro de série déjà utilisé par un autre vendeur, prix inférieur à la moitié du prix habituel d'au moins 3 annonces comparables (même modèle, à 2 ans près, publiées dans l'année), description ou photo copiée d'un autre vendeur (empreinte de la photo qui résiste au redimensionnement et à la recompression), tentative d'afficher un numéro ou un e-mail. Rien n'est refusé automatiquement, sauf le véhicule volé. Limites : une photo recadrée ou entourée de bandes n'est pas reconnue ; les comparaisons se font en mémoire, à revoir au-delà d'environ 20 000 annonces.
 
