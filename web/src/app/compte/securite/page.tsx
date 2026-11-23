@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import QRCode from "qrcode";
-import { verifySecondFactor } from "../../mfa-actions";
+import { disableSecondFactor, verifySecondFactor } from "../../mfa-actions";
 import { SubmitButton, SubmitForm } from "../../submit-form";
 import { prisma } from "@/lib/db";
 import { contactOf, requireSecondFactorSession } from "@/lib/session";
@@ -42,6 +42,11 @@ export default async function Securite() {
             <Link href={isAdmin ? "/admin" : "/compte"} className="btn btn-primary">
               {isAdmin ? "Aller à l'administration" : "Aller à mon compte"}
             </Link>
+            {!isAdmin && (
+              <SubmitForm action={disableSecondFactor} fields={{}}>
+                <SubmitButton className="btn btn-ghost">Désactiver la double vérification</SubmitButton>
+              </SubmitForm>
+            )}
           </>
         ) : (
           <>
@@ -76,9 +81,8 @@ export default async function Securite() {
       <h1>Double vérification</h1>
       <p>
         {isAdmin
-          ? "Un compte administrateur voit les documents privés et, pendant un vol, les positions des véhicules."
-          : "Un compte agence donne accès aux positions de votre flotte et aux documents de vos clients (permis, contrats)."}{" "}
-        En plus du code reçu par e-mail, il demande un code donné par une application sur votre téléphone.
+          ? "Un compte administrateur voit les documents privés et, pendant un vol, les positions des véhicules. En plus du code reçu par e-mail, il demande un code donné par une application sur votre téléphone."
+          : "Facultative mais recommandée : votre compte agence donne accès aux positions de votre flotte et aux documents de vos clients (permis, contrats). Une fois activée, chaque nouvelle connexion demandera, en plus du code reçu par e-mail, un code donné par une application sur votre téléphone."}
       </p>
       <ol className="stack tight">
         <li>

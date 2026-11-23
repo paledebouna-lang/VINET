@@ -16,9 +16,9 @@ const roleLabels: Record<string, string> = {
 
 export default async function Compte() {
   const user = await requireUser();
-  const { memberNumber, sellerProfile } = await prisma.user.findUniqueOrThrow({
+  const { memberNumber, sellerProfile, adminMfa } = await prisma.user.findUniqueOrThrow({
     where: { id: user.id },
-    select: { memberNumber: true, sellerProfile: { select: { company: true } } },
+    select: { memberNumber: true, sellerProfile: { select: { company: true } }, adminMfa: { select: { sealedSecret: true } } },
   });
   // Accounts created by phone carry a placeholder address until a real one is added.
   const hasEmail = !user.email.endsWith(".invalid");
@@ -78,9 +78,14 @@ export default async function Compte() {
             Modération
           </Link>
         )}
-        {(user.role === "admin" || user.role === "agence") && (
+        {user.role === "admin" && (
           <Link href="/compte/securite" className="btn btn-ghost">
             Double vérification
+          </Link>
+        )}
+        {user.role === "agence" && (
+          <Link href="/compte/securite" className="btn btn-ghost">
+            {adminMfa?.sealedSecret ? "Double vérification : activée" : "Activer la double vérification (recommandé)"}
           </Link>
         )}
         <SignOutButton />

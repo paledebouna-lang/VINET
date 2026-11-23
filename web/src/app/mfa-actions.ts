@@ -48,3 +48,14 @@ export async function verifySecondFactor(_prev: FormState, formData: FormData): 
   await audit(setup ? "mfa.enabled" : "mfa.verified", user.id, session.ipAddress);
   redirect(user.role === "admin" ? "/admin" : "/compte");
 }
+
+/** An agency turns its second factor off. Only from a session where the code was typed: the e-mail alone cannot do it. */
+export async function disableSecondFactor(): Promise<FormState> {
+  const { user, session } = await requireSecondFactorSession();
+  if (user.role !== "agence") return fail("La double vérification est obligatoire pour les comptes administrateurs.");
+  const current = await prisma.session.findUnique({ where: { id: session.id }, select: { mfaVerifiedAt: true } });
+  if (!current?.mfaVerifiedAt) return fail("Tapez d'abord le code de votre application.");
+  await prisma.adminMfa.deleteMany({ where: { userId: user.id } });
+  await audit("mfa.disabled", user.id, session.ipAddress);
+  redirect("/compte");
+}

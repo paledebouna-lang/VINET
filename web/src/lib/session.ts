@@ -5,21 +5,26 @@ import { prisma } from "./db";
 
 const currentSession = async () => auth.api.getSession({ headers: await headers() });
 
-// Accounts that need the code of an authenticator app, on top of the e-mail code, once per session.
+// Accounts that may use the code of an authenticator app on top of the e-mail code, once per session.
+// For admins it is required; for agencies it is their choice, and required once they turn it on.
 const SECOND_FACTOR_ROLES = ["admin", "agence"];
 
 /**
  * The account and whether its second factor is still to be typed in this session. An admin acts as
- * an ordinary account until then; an agency account has no access at all, since what it holds
- * (its fleet's positions, its customers' documents) is what the second factor protects.
+ * an ordinary account until then; an agency that turned the second factor on has no access at all,
+ * since what it holds (its fleet's positions, its customers' documents) is what the factor protects.
  */
 async function resolveUser() {
   const session = await currentSession();
   if (!session) return null;
   const { user } = session;
   if (SECOND_FACTOR_ROLES.includes(user.role)) {
-    const verified = await prisma.session.findUnique({ where: { id: session.session.id }, select: { mfaVerifiedAt: true } });
-    if (!verified?.mfaVerifiedAt) {
+    const [verified, mfa] = await Promise.all([
+      prisma.session.findUnique({ where: { id: session.session.id }, select: { mfaVerifiedAt: true } }),
+      user.role === "agence" ? prisma.adminMfa.findUnique({ where: { userId: user.id }, select: { sealedSecret: true } }) : null,
+    ]);
+    const required = user.role === "admin" || Boolean(mfa?.sealedSecret);
+    if (required && !verified?.mfaVerifiedAt) {
       return { user: { ...user, role: "particulier", adminPending: user.role === "admin" }, agencyPending: user.role === "agence" };
     }
   }
