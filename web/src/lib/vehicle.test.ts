@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { maskMiddle, newAvsId, parseAvsId, parsePosition, sightingInput, vehicleInput } from "./vehicle.ts";
+import { isoDay, today } from "./rental.ts";
+import { maskMiddle, mileageWarning, newAvsId, parseAvsId, parsePosition, serviceInput, sightingInput, vehicleInput } from "./vehicle.ts";
 
 test("issues unguessable identifiers that read back", () => {
   const ids = new Set(Array.from({ length: 200 }, newAvsId));
@@ -52,4 +53,30 @@ test("validates a sighting", () => {
   assert.equal(sightingInput.safeParse({ kind: "OBSERVATION", note: "Vu garé devant la pharmacie." }).success, true);
   assert.equal(sightingInput.safeParse({ kind: "THEFT", note: "Vu garé devant la pharmacie." }).success, false);
   assert.equal(sightingInput.safeParse({ kind: "SUSPECT", note: "court" }).success, false);
+});
+
+test("reads a maintenance log entry", () => {
+  const ok = serviceInput(2018).safeParse({ date: "2019-03-02", mileageKm: "48 500", work: " Vidange et filtres ", garage: "" });
+  assert.ok(ok.success);
+  assert.deepEqual(ok.data, { date: new Date("2019-03-02T00:00:00Z"), mileageKm: 48500, work: "Vidange et filtres", garage: null });
+  const tomorrow = isoDay(new Date(today().getTime() + 86_400_000));
+  for (const date of ["2016-12-31", tomorrow, "2019-02-30", "hier"]) {
+    assert.equal(serviceInput(2018).safeParse({ date, mileageKm: "1", work: "Freins", garage: "" }).success, false, date);
+  }
+  assert.ok(serviceInput(2018).safeParse({ date: "2017-06-01", mileageKm: "0", work: "Pneus", garage: "" }).success);
+  for (const mileageKm of ["", "-5", "12,5", "3000000"]) {
+    assert.equal(serviceInput(2018).safeParse({ date: "2019-03-02", mileageKm, work: "Freins", garage: "" }).success, false, mileageKm);
+  }
+});
+
+test("spots kilometres going backwards", () => {
+  const at = (date: string, mileageKm: number) => ({ date: new Date(`${date}T00:00:00Z`), mileageKm });
+  const log = [at("2022-05-01", 60000), at("2020-01-10", 30000), at("2021-03-01", 45000)];
+  assert.equal(mileageWarning(log), null);
+  assert.equal(mileageWarning(log, 61000), null);
+  assert.match(mileageWarning(log, 50000)!, /60 000 km/);
+  assert.match(mileageWarning([...log, at("2023-01-01", 40000)])!, /moins de kilomètres/);
+  // Two entries the same day are read in kilometre order.
+  assert.equal(mileageWarning([at("2022-05-01", 61000), at("2022-05-01", 60000)]), null);
+  assert.equal(mileageWarning([]), null);
 });

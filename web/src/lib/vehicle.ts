@@ -1,5 +1,7 @@
 import { randomInt } from "node:crypto";
 import { z } from "zod";
+import { formatNumber } from "./listing.ts";
+import { parseDay, today } from "./rental.ts";
 
 // No 0/O, 1/I/L: an identifier read from a sticker and typed by hand must not be ambiguous.
 const ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
@@ -83,4 +85,43 @@ export function parsePosition(values: Record<string, string | undefined>) {
   if (values.sharePosition !== "on") return null;
   const parsed = positionInput.safeParse(values);
   return parsed.success ? parsed.data : null;
+}
+
+/** A maintenance log entry as the owner types it. A vehicle can be sold the year before its model year. */
+export const serviceInput = (vehicleYear: number) =>
+  z.object({
+    date: z.string().transform((value, ctx) => {
+      const day = parseDay(value.trim());
+      if (!day || day > today() || day.getUTCFullYear() < vehicleYear - 1) {
+        ctx.addIssue({ code: "custom", message: "Date invalide : entre l'année du véhicule et aujourd'hui." });
+        return z.NEVER;
+      }
+      return day;
+    }),
+    mileageKm: z
+      .string()
+      .transform((s) => s.replace(/\s/g, ""))
+      .pipe(z.string().regex(/^\d{1,7}$/, "Entrez le kilométrage en chiffres."))
+      .transform(Number)
+      .pipe(z.number().max(2_000_000, "Kilométrage invalide.")),
+    work: z.string().trim().min(3, "Décrivez ce qui a été fait.").max(200, "200 caractères au maximum."),
+    garage: z
+      .string()
+      .trim()
+      .max(80, "80 caractères au maximum.")
+      .transform((v) => v || null),
+  });
+
+/** Sign of a wound-back odometer: fewer kilometres than an earlier entry, in a later entry or in the listing. */
+export function mileageWarning(records: { date: Date; mileageKm: number }[], listingKm: number | null = null) {
+  const sorted = [...records].sort((a, b) => a.date.getTime() - b.date.getTime() || a.mileageKm - b.mileageKm);
+  let max = 0;
+  for (const r of sorted) {
+    if (r.mileageKm < max) return "Un entretien indique moins de kilomètres qu'un entretien plus ancien.";
+    max = r.mileageKm;
+  }
+  if (listingKm !== null && listingKm < max) {
+    return `Le kilométrage de l'annonce est inférieur à celui du dernier entretien noté (${formatNumber(max)} km).`;
+  }
+  return null;
 }

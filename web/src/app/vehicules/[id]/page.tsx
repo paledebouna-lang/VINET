@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
+import { SubmitButton, SubmitForm } from "../../submit-form";
+import { addServiceRecord, deleteServiceRecord } from "../../vehicle-actions";
 import { prisma } from "@/lib/db";
 import { CATEGORIES, formatNumber } from "@/lib/listing";
 import { siteUrl } from "@/lib/mail";
-import { formatDay } from "@/lib/rental";
+import { formatDay, isoDay, today } from "@/lib/rental";
 import { requireUser } from "@/lib/session";
+import { mileageWarning } from "@/lib/vehicle";
 
 export const instant = false;
 
@@ -32,6 +35,10 @@ export default async function Passeport({ params }: PageProps<"/vehicules/[id]">
       // Observations only: a suspicion may concern the owner, so it stays with the team.
       sightings: { where: { kind: "OBSERVATION" }, orderBy: { createdAt: "desc" }, take: 50 },
       theftCases: { where: { status: { in: ["DECLARED", "ACTIVE"] } }, select: { id: true, status: true } },
+      serviceRecords: {
+        orderBy: [{ date: "desc" }, { mileageKm: "desc" }],
+        include: { documents: { select: { id: true } } },
+      },
     },
   });
   if (!vehicle) notFound();
@@ -40,6 +47,8 @@ export default async function Passeport({ params }: PageProps<"/vehicules/[id]">
   const qr = await QRCode.toDataURL(checkUrl, { margin: 1, width: 320, errorCorrectionLevel: "M" });
   const openCase = vehicle.theftCases[0];
   const inspections = vehicle.listings.flatMap((l) => l.bookings.flatMap((b) => b.inspections));
+  const isOwner = vehicle.ownerId === user.id;
+  const serviceWarning = mileageWarning(vehicle.serviceRecords);
 
   return (
     <div className="section wrap medium">
@@ -163,6 +172,66 @@ export default async function Passeport({ params }: PageProps<"/vehicules/[id]">
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="card stack no-print">
+        <h2 className="sub-title">Carnet d&apos;entretien</h2>
+        <p className="muted small">
+          Notez les vidanges, réparations et contrôles. Ils apparaissent sur vos annonces de ce véhicule, présentés comme
+          déclarés par vous. Les factures restent privées : seuls vous et l&apos;équipe MonAuto les voient.
+        </p>
+        {serviceWarning && <p className="alert">{serviceWarning}</p>}
+        {vehicle.serviceRecords.length === 0 && <p className="muted">Aucun entretien noté.</p>}
+        <ul className="plain stack tight">
+          {vehicle.serviceRecords.map((r) => (
+            <li key={r.id} className="row start">
+              <span>
+                {formatDay(r.date)} · {formatNumber(r.mileageKm)} km · {r.work}
+                {r.garage && ` · ${r.garage}`}
+                {r.documents.map((d) => (
+                  <span key={d.id}>
+                    {" "}
+                    · <a href={`/documents/${d.id}`}>facture</a>
+                  </span>
+                ))}
+              </span>
+              {isOwner && (
+                <SubmitForm action={deleteServiceRecord} fields={{ id: r.id }}>
+                  <SubmitButton className="btn btn-ghost" aria-label={`Supprimer l'entretien du ${formatDay(r.date)}`}>
+                    Supprimer
+                  </SubmitButton>
+                </SubmitForm>
+              )}
+            </li>
+          ))}
+        </ul>
+        {isOwner && (
+          <SubmitForm action={addServiceRecord} fields={{ vehicleId: vehicle.id }} className="form-grid">
+            <div className="field">
+              <label htmlFor="date">Date</label>
+              <input id="date" name="date" type="date" required max={isoDay(today())} />
+            </div>
+            <div className="field">
+              <label htmlFor="mileageKm">Kilométrage (km)</label>
+              <input id="mileageKm" name="mileageKm" inputMode="numeric" required placeholder="48 000" />
+            </div>
+            <div className="field">
+              <label htmlFor="garage">Garage (facultatif)</label>
+              <input id="garage" name="garage" maxLength={80} />
+            </div>
+            <div className="field full-row">
+              <label htmlFor="work">Ce qui a été fait</label>
+              <input id="work" name="work" required maxLength={200} placeholder="Vidange, filtres à huile et à air" />
+            </div>
+            <div className="field full-row">
+              <label htmlFor="invoice">Photo de la facture (facultatif)</label>
+              <input id="invoice" name="invoice" type="file" accept="image/jpeg,image/png,image/webp" />
+            </div>
+            <div className="full-row">
+              <SubmitButton>Ajouter au carnet</SubmitButton>
+            </div>
+          </SubmitForm>
+        )}
       </section>
 
       <section className="card stack no-print">

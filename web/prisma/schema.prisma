@@ -357,6 +357,7 @@ enum DocumentKind {
   INSPECTION
   REGISTRATION
   THEFT
+  INVOICE
 }
 
 // Private images, never served publicly: see /documents/[id]. Files live in UPLOAD_DIR like photos.
@@ -373,6 +374,8 @@ model Document {
   vehicle      Vehicle?     @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
   theftCaseId  String?
   theftCase    TheftCase?   @relation(fields: [theftCaseId], references: [id], onDelete: Cascade)
+  serviceRecordId String?
+  serviceRecord   ServiceRecord? @relation(fields: [serviceRecordId], references: [id], onDelete: Cascade)
   position     Int          @default(0)
 
   @@index([listingId])
@@ -380,7 +383,25 @@ model Document {
   @@index([inspectionId])
   @@index([vehicleId])
   @@index([theftCaseId])
+  @@index([serviceRecordId])
   @@map("document")
+}
+
+// The owner's maintenance log. Declared, not checked: shown to buyers as the owner's word.
+model ServiceRecord {
+  id        String     @id @default(cuid())
+  vehicleId String
+  vehicle   Vehicle    @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  date      DateTime   @db.Date
+  mileageKm Int
+  work      String
+  garage    String?
+  createdAt DateTime   @default(now())
+  // The invoice photo: private to the owner and the team, like the other documents.
+  documents Document[]
+
+  @@index([vehicleId, date])
+  @@map("service_record")
 }
 
 // A request to the MonAuto team. With a booking it is a dispute about that rental,
@@ -431,6 +452,7 @@ model Vehicle {
   theftCases   TheftCase[]
   sightings    Sighting[]
   documents    Document[]
+  serviceRecords ServiceRecord[]
 
   @@index([ownerId])
   @@map("vehicle")

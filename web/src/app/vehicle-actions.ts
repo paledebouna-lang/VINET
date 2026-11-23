@@ -11,10 +11,11 @@ import { MAX_PHOTO_BYTES, deletePhotos, storePhotos } from "@/lib/photos";
 import { caseReference } from "@/lib/security";
 import { requireAdmin, requireUser } from "@/lib/session";
 import { notifyTeam } from "@/lib/team";
-import { newAvsId, parseAvsId, parsePosition, sightingInput, vehicleInput } from "@/lib/vehicle";
+import { newAvsId, parseAvsId, parsePosition, serviceInput, sightingInput, vehicleInput } from "@/lib/vehicle";
 
 const MAX_VEHICLES = 50;
 const MAX_SIGHTINGS_PER_DAY = 20;
+const MAX_SERVICE_RECORDS = 300;
 
 const text = (formData: FormData) =>
   Object.fromEntries(
@@ -144,4 +145,63 @@ export async function reviewSighting(formData: FormData) {
   await prisma.sighting.update({ where: { id }, data: { reviewedAt: new Date() } });
   await prisma.auditLog.create({ data: { action: "sighting.reviewed", actorId: admin.id, target: id } });
   revalidatePath("/admin", "layout");
+}
+
+/** The owner notes a service or a repair in the vehicle's maintenance log, with the invoice if they have it. */
+export async function addServiceRecord(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireUser();
+  const values = text(formData);
+  const vehicle = await prisma.vehicle.findFirst({
+    where: { id: values.vehicleId, ownerId: user.id },
+    select: { id: true, year: true, _count: { select: { serviceRecords: true } } },
+  });
+  if (!vehicle) return { errors: { form: ["Ce véhicule est introuvable."] } };
+  const parsed = serviceInput(vehicle.year).safeParse(values);
+  const errors: FormState["errors"] = parsed.success ? {} : z.flattenError(parsed.error).fieldErrors;
+  const file = formData.get("invoice");
+  const invoice = file instanceof File && file.size > 0 ? file : null;
+  if (invoice && invoice.size > MAX_PHOTO_BYTES) errors.invoice = ["Le fichier doit peser moins de 8 Mo."];
+  if (!parsed.success || errors.invoice) return { errors, values };
+  if (vehicle._count.serviceRecords >= MAX_SERVICE_RECORDS) {
+    return { errors: { form: ["Le carnet de ce véhicule est plein."] } };
+  }
+
+  let docIds: string[];
+  try {
+    docIds = await storePhotos(invoice ? [invoice] : []);
+  } catch {
+    return { errors: { invoice: ["Image illisible. Utilisez un fichier JPEG, PNG ou WebP."] }, values };
+  }
+  const { garage, work, ...rest } = parsed.data;
+  try {
+    // Shown on listings: no phone number or e-mail, as everywhere a buyer reads.
+    await prisma.serviceRecord.create({
+      data: {
+        ...rest,
+        work: maskContacts(work),
+        garage: garage && maskContacts(garage),
+        vehicleId: vehicle.id,
+        documents: { create: docIds.map((id) => ({ id, kind: "INVOICE" as const })) },
+      },
+    });
+  } catch (e) {
+    await deletePhotos(docIds);
+    throw e;
+  }
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/** The owner removes an entry, with its invoice. */
+export async function deleteServiceRecord(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireUser();
+  const record = await prisma.serviceRecord.findFirst({
+    where: { id: String(formData.get("id")), vehicle: { ownerId: user.id } },
+    select: { id: true, documents: { select: { id: true } } },
+  });
+  if (!record) return { errors: { form: ["Cette entrée est introuvable."] } };
+  await prisma.serviceRecord.delete({ where: { id: record.id } });
+  await deletePhotos(record.documents.map((d) => d.id));
+  revalidatePath("/", "layout");
+  return { ok: true };
 }

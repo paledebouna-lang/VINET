@@ -160,7 +160,7 @@ Reste à faire :
 
 - Statut « volé » ou « recherché » sur la page publique : il arrive avec la déclaration de vol vérifiée du lot 7.
 - Une étiquette copiée sur un autre véhicule affiche la description du véhicule d'origine : c'est au lecteur de comparer. Étiquettes inviolables et second QR caché restent à étudier.
-- Réparations déclarées et documents joints au passeport.
+- ~~Réparations déclarées et documents joints au passeport.~~ Fait : **carnet d'entretien** sur le passeport (date, kilométrage, ce qui a été fait, garage, photo de la facture facultative). Il apparaît sur les annonces du véhicule, présenté comme déclaré par le propriétaire ; les factures restent privées (propriétaire et équipe), l'acheteur lit seulement « facture fournie ». Numéros et e-mails masqués. Alerte affichée à l'acheteur si les kilomètres reculent d'un entretien à l'autre, ou si l'annonce indique moins de kilomètres que le dernier entretien. Le propriétaire peut supprimer une entrée. Rien n'est vérifié par l'équipe. À ajouter à la politique de confidentialité : les factures (qui peuvent porter le nom du propriétaire) sont conservées tant que l'entrée existe.
 - Signalement sans compte.
 
 Sortie : un scan affiche l'identité vérifiée et permet un signalement qualifié comme tel. Vérifié en local, sans lecture du QR par un vrai téléphone.

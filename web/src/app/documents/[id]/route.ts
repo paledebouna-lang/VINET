@@ -5,7 +5,7 @@ import { getUser } from "@/lib/session";
 
 const notFound = () => new Response(null, { status: 404 });
 
-/** Private images: registration papers, insurance attestations, driving licences, inspection photos. Never public. */
+/** Private images: registration papers, insurance attestations, driving licences, inspection photos, invoices. Never public. */
 export async function GET(request: Request, ctx: RouteContext<"/documents/[id]">) {
   const { id } = await ctx.params;
   const user = await getUser();
@@ -17,6 +17,7 @@ export async function GET(request: Request, ctx: RouteContext<"/documents/[id]">
       listing: { select: { sellerId: true } },
       vehicle: { select: { ownerId: true } },
       theftCase: { select: { declarantId: true } },
+      serviceRecord: { select: { vehicle: { select: { ownerId: true } } } },
       booking: { select: { renterId: true, listing: { select: { sellerId: true } } } },
       inspection: { select: { booking: { select: { renterId: true, listing: { select: { sellerId: true } } } } } },
     },
@@ -29,6 +30,7 @@ export async function GET(request: Request, ctx: RouteContext<"/documents/[id]">
     doc.listing?.sellerId,
     doc.vehicle?.ownerId,
     doc.theftCase?.declarantId,
+    doc.serviceRecord?.vehicle.ownerId,
     booking?.renterId,
     booking?.listing.sellerId,
   ];

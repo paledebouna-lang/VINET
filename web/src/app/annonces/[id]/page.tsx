@@ -10,6 +10,7 @@ import { jsonLdScript, listingDescription, listingHeadline, listingJsonLd } from
 import { getUser } from "@/lib/session";
 import { BookingForm } from "../../locations/forms";
 import { formatDay, isoDay, today } from "@/lib/rental";
+import { mileageWarning } from "@/lib/vehicle";
 import { MessageForm, ReportForm } from "./forms";
 
 export const instant = false;
@@ -42,7 +43,17 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
     include: {
       photos: { orderBy: { position: "asc" } },
       seller: { select: { sellerProfile: true } },
-      vehicle: { select: { avsId: true, verifiedAt: true } },
+      vehicle: {
+        select: {
+          avsId: true,
+          verifiedAt: true,
+          serviceRecords: {
+            orderBy: [{ date: "desc" }, { mileageKm: "desc" }],
+            take: 50,
+            select: { id: true, date: true, mileageKm: true, work: true, garage: true, _count: { select: { documents: true } } },
+          },
+        },
+      },
       favorites: { where: { userId: user?.id ?? "" } },
       conversations: { where: { buyerId: user?.id ?? "" }, select: { id: true } },
       // Days already taken, shown so that a renter picks free dates.
@@ -58,6 +69,7 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
   if (!listing || (listing.status !== "PUBLISHED" && !isOwner && user?.role !== "admin")) notFound();
 
   const title = listingTitle(listing);
+  const serviceWarning = listing.vehicle && mileageWarning(listing.vehicle.serviceRecords, listing.mileageKm);
   const isPart = listing.category === "PIECE";
   const favorite = listing.favorites[0];
   const conversation = listing.conversations[0];
@@ -161,6 +173,21 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
                   : "Carte grise en cours de vérification."}{" "}
                 <Link href={`/v/${listing.vehicle.avsId}`}>Vérifier ce véhicule</Link>
               </p>
+              {listing.vehicle.serviceRecords.length > 0 && (
+                <>
+                  <p className="passport-title">Carnet d&apos;entretien, déclaré par le propriétaire</p>
+                  {serviceWarning && <p className="alert small">{serviceWarning}</p>}
+                  <ul className="plain small">
+                    {listing.vehicle.serviceRecords.map((r) => (
+                      <li key={r.id}>
+                        {formatDay(r.date)} · {formatNumber(r.mileageKm)} km · {r.work}
+                        {r.garage && ` · ${r.garage}`}
+                        {r._count.documents > 0 && " · facture fournie"}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </div>
           )}
           <p className="description">{listing.description}</p>
