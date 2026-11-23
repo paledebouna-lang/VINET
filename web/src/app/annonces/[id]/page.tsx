@@ -142,6 +142,18 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
             )}
             {isRent && (
               <>
+                {listing.pricePerWeekFcfa && (
+                  <div>
+                    <dt>À la semaine</dt>
+                    <dd>{formatPrice(listing.pricePerWeekFcfa)}</dd>
+                  </div>
+                )}
+                {listing.pricePerMonthFcfa && (
+                  <div>
+                    <dt>Au mois</dt>
+                    <dd>{formatPrice(listing.pricePerMonthFcfa)}</dd>
+                  </div>
+                )}
                 <div>
                   <dt>Dépôt de garantie</dt>
                   <dd>{formatPrice(listing.depositFcfa ?? 0)}</dd>
@@ -255,7 +267,11 @@ export default async function Annonce({ params }: PageProps<"/annonces/[id]">) {
               {isRent && (
                 <>
                   <h2 className="sub-title">Réserver ce véhicule</h2>
-                  <BookingForm listingId={listing.id} pricePerDay={listing.priceFcfa} today={isoDay(today())} />
+                  <BookingForm
+                    listingId={listing.id}
+                    rates={{ day: listing.priceFcfa, week: listing.pricePerWeekFcfa, month: listing.pricePerMonthFcfa }}
+                    today={isoDay(today())}
+                  />
                   <hr />
                 </>
               )}

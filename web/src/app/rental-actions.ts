@@ -9,7 +9,7 @@ import type { FormState } from "./actions";
 import { prisma } from "@/lib/db";
 import { notify, siteUrl } from "@/lib/mail";
 import { MAX_PHOTO_BYTES, MAX_PHOTOS, deletePhotos, storePhotos } from "@/lib/photos";
-import { contractText, inspectionInput, parseBooking } from "@/lib/rental";
+import { contractText, inspectionInput, parseBooking, rentalPrice } from "@/lib/rental";
 import { requireUser } from "@/lib/session";
 
 const MAX_OPEN_REQUESTS = 5;
@@ -90,7 +90,9 @@ export async function requestBooking(_prev: FormState, formData: FormData): Prom
         endDate,
         days,
         pricePerDayFcfa: listing.priceFcfa,
-        totalFcfa: listing.priceFcfa * days,
+        pricePerWeekFcfa: listing.pricePerWeekFcfa,
+        pricePerMonthFcfa: listing.pricePerMonthFcfa,
+        totalFcfa: rentalPrice(days, { day: listing.priceFcfa, week: listing.pricePerWeekFcfa, month: listing.pricePerMonthFcfa }).total,
         depositFcfa: listing.depositFcfa ?? 0,
         renterFullName,
         licenceNumber,
@@ -129,6 +131,8 @@ export async function decideBooking(_prev: FormState, formData: FormData): Promi
       endDate: booking.endDate,
       days: booking.days,
       pricePerDayFcfa: booking.pricePerDayFcfa,
+      pricePerWeekFcfa: booking.pricePerWeekFcfa,
+      pricePerMonthFcfa: booking.pricePerMonthFcfa,
       totalFcfa: booking.totalFcfa,
       depositFcfa: booking.depositFcfa,
       kmPerDay: listing.kmPerDay ?? 0,

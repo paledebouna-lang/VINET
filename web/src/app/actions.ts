@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { checkListing } from "@/lib/listing-checks";
+import { ratesErrors } from "@/lib/rental";
 import { formatPrice, listingTitle, maskContacts, parseListing, rentalInput, sellerProfileInput } from "@/lib/listing";
 import { notify, siteUrl as site } from "@/lib/mail";
 import { MAX_PHOTO_BYTES, MAX_PHOTOS, deletePhotos, storePhotos } from "@/lib/photos";
@@ -61,7 +62,7 @@ async function ownVehicleId(values: Record<string, string>, userId: string) {
   return vehicle?.id ?? null;
 }
 
-const noRental = { depositFcfa: null, kmPerDay: null, zone: null, gpsModel: null, gpsSerial: null };
+const noRental = { pricePerWeekFcfa: null, pricePerMonthFcfa: null, depositFcfa: null, kmPerDay: null, zone: null, gpsModel: null, gpsSerial: null };
 
 /** Reads and validates the listing form shared by creation and edition. */
 function readListingForm(formData: FormData, keptPhotos: number, hasInsurance: boolean) {
@@ -73,6 +74,10 @@ function readListingForm(formData: FormData, keptPhotos: number, hasInsurance: b
   const isRent = values.kind === "RENT";
   const rental = isRent ? rentalInput.safeParse(values) : null;
   if (rental && !rental.success) Object.assign(errors, z.flattenError(rental.error).fieldErrors);
+  if (rental?.success && parsed.data) {
+    const { pricePerWeekFcfa: week, pricePerMonthFcfa: month } = rental.data;
+    Object.assign(errors, ratesErrors({ day: parsed.data.priceFcfa, week, month }));
+  }
   const file = formData.get("insurance");
   const insurance = file instanceof File && file.size > 0 ? file : null;
   if (isRent && !insurance && !hasInsurance) errors.insurance = ["Joignez une photo de l'attestation d'assurance."];

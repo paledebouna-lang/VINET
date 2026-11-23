@@ -42,6 +42,13 @@ const int = (min: number, max: number, message: string) =>
     .transform(Number)
     .pipe(z.number().min(min, message).max(max, message));
 
+// Empty or absent → null.
+const optionalInt = (min: number, max: number, message: string) =>
+  z
+    .union([z.literal("").transform(() => null), int(min, max, message)])
+    .optional()
+    .transform((v) => v ?? null);
+
 export const KINDS = { SALE: "Vente", RENT: "Location" } as const;
 export type KindKey = keyof typeof KINDS;
 
@@ -138,6 +145,8 @@ export const listingTitle = (l: Titled) =>
 
 /** What a rental offer adds. Without a declared GPS, a vehicle cannot be put up for rent. */
 export const rentalInput = z.object({
+  pricePerWeekFcfa: optionalInt(1_000, 100_000_000, "Prix à la semaine invalide."),
+  pricePerMonthFcfa: optionalInt(1_000, 100_000_000, "Prix au mois invalide."),
   depositFcfa: int(0, 50_000_000, "Dépôt de garantie invalide."),
   kmPerDay: int(1, 2_000, "Entre 1 et 2 000 km par jour."),
   zone: text(80),

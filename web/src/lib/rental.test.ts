@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { contractText, inspectionInput, overlaps, parseBooking, parseDay, rentalDays } from "./rental.ts";
+import { billText, contractText, inspectionInput, overlaps, parseBooking, parseDay, ratesErrors, rentalDays, rentalPrice } from "./rental.ts";
 
 const day = (s: string) => parseDay(s)!;
 const now = day("2026-11-10");
@@ -55,6 +55,8 @@ test("writes the agreed terms into the contract", () => {
     endDate: day("2026-11-12"),
     days: 3,
     pricePerDayFcfa: 45000,
+    pricePerWeekFcfa: 250000,
+    pricePerMonthFcfa: null,
     totalFcfa: 135000,
     depositFcfa: 200000,
     kmPerDay: 200,
@@ -63,4 +65,37 @@ test("writes the agreed terms into the contract", () => {
   for (const part of ["Yao Koffi Serge", "Koné Ibrahim", "CI-123456", "10 novembre 2026", "12 novembre 2026", "3 jours", "45 000 FCFA par jour", "135 000 FCFA au total", "200 000 FCFA", "200 km", "Grand Abidjan"]) {
     assert.ok(text.includes(part), part);
   }
+});
+
+test("bills the cheapest mix of days, weeks and months", () => {
+  const rates = { day: 30000, week: 150000, month: 500000 };
+  assert.deepEqual(rentalPrice(3, rates), { total: 90000, months: 0, weeks: 0, days: 3 });
+  // Five days cost as much as a week: days are kept. Six cost more: billed as one week.
+  assert.equal(rentalPrice(5, rates).weeks, 0);
+  assert.deepEqual(rentalPrice(6, rates), { total: 150000, months: 0, weeks: 1, days: 0 });
+  assert.deepEqual(rentalPrice(9, rates), { total: 210000, months: 0, weeks: 1, days: 2 });
+  assert.deepEqual(rentalPrice(25, rates), { total: 500000, months: 1, weeks: 0, days: 0 });
+  assert.deepEqual(rentalPrice(39, rates), { total: 710000, months: 1, weeks: 1, days: 2 });
+  assert.deepEqual(rentalPrice(90, rates), { total: 1500000, months: 3, weeks: 0, days: 0 });
+  // Without week or month rates, every day at the daily rate.
+  assert.equal(rentalPrice(40, { day: 25000, week: null, month: null }).total, 1000000);
+  assert.equal(billText(rentalPrice(39, rates), rates), "1 mois à 500 000 FCFA, 1 semaine à 150 000 FCFA et 2 jours à 30 000 FCFA");
+  assert.equal(billText(rentalPrice(14, rates), rates), "2 semaines à 150 000 FCFA");
+});
+
+test("refuses week and month rates that would never apply", () => {
+  assert.deepEqual(ratesErrors({ day: 25000, week: 150000, month: 500000 }), {});
+  assert.deepEqual(ratesErrors({ day: 25000, week: null, month: null }), {});
+  assert.ok(ratesErrors({ day: 25000, week: 175000, month: null }).pricePerWeekFcfa);
+  assert.ok(ratesErrors({ day: 25000, week: null, month: 750000 }).pricePerMonthFcfa);
+  assert.ok(ratesErrors({ day: 25000, week: 100000, month: 500000 }).pricePerMonthFcfa);
+});
+
+test("names the rates applied in the contract", () => {
+  const facts = {
+    ownerName: "A", renterName: "B", licenceNumber: "C", vehicle: "D", zone: "E", kmPerDay: 200, depositFcfa: 0,
+    startDate: day("2026-11-10"), endDate: day("2026-11-18"), days: 9,
+    pricePerDayFcfa: 25000, pricePerWeekFcfa: 150000, pricePerMonthFcfa: null, totalFcfa: 200000,
+  };
+  assert.ok(contractText(facts).includes("3. Prix. Tarif appliqué : 1 semaine à 150 000 FCFA et 2 jours à 25 000 FCFA, soit 200 000 FCFA au total"));
 });

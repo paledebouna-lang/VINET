@@ -19,6 +19,57 @@ export const today = () => parseDay(isoDay(new Date()))!;
 const dateFr = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "UTC" });
 export const formatDay = (day: Date) => dateFr.format(day);
 
+export type Rates = { day: number; week: number | null; month: number | null };
+type Bill = { total: number; months: number; weeks: number; days: number };
+
+/**
+ * The cheapest bill for a rental of `days` days, in whole days, weeks (7 days) and months (30 days).
+ * A week or a month may cover a few more days than needed when that costs less: 6 days at a
+ * week rate below 6 daily rates is billed as one week. At equal cost, days are kept.
+ */
+export function rentalPrice(days: number, rates: Rates): Bill {
+  const best: Bill[] = [{ total: 0, months: 0, weeks: 0, days: 0 }];
+  for (let d = 1; d <= days; d++) {
+    const options = [{ ...best[d - 1], total: best[d - 1].total + rates.day, days: best[d - 1].days + 1 }];
+    if (rates.week) {
+      const before = best[Math.max(0, d - 7)];
+      options.push({ ...before, total: before.total + rates.week, weeks: before.weeks + 1 });
+    }
+    if (rates.month) {
+      const before = best[Math.max(0, d - 30)];
+      options.push({ ...before, total: before.total + rates.month, months: before.months + 1 });
+    }
+    best[d] = options.reduce((a, b) => (b.total < a.total ? b : a));
+  }
+  return best[days];
+}
+
+const count = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
+
+/** "1 mois à 500 000 FCFA, 1 semaine à 150 000 FCFA et 2 jours à 30 000 FCFA". */
+export function billText(bill: Bill, rates: Rates) {
+  const parts = [
+    bill.months ? `${count(bill.months, "mois", "mois")} à ${formatPrice(rates.month!)}` : "",
+    bill.weeks ? `${count(bill.weeks, "semaine", "semaines")} à ${formatPrice(rates.week!)}` : "",
+    bill.days ? `${count(bill.days, "jour", "jours")} à ${formatPrice(rates.day)}` : "",
+  ].filter(Boolean);
+  return parts.length > 1 ? `${parts.slice(0, -1).join(", ")} et ${parts.at(-1)}` : parts[0];
+}
+
+/** A week or month rate that is not cheaper than the shorter rate would never apply: it is refused. */
+export function ratesErrors({ day, week, month }: Rates) {
+  const errors: Record<string, string[]> = {};
+  if (week !== null && week >= day * 7) {
+    errors.pricePerWeekFcfa = ["Le prix à la semaine doit être inférieur à 7 jours au prix par jour."];
+  }
+  if (month !== null && month >= Math.min(day * 30, week !== null ? week * 5 : Infinity)) {
+    errors.pricePerMonthFcfa = [
+      "Le prix au mois doit être inférieur à 30 jours au prix par jour, et à 5 semaines au prix à la semaine.",
+    ];
+  }
+  return errors;
+}
+
 /** Both ends count: 10 to 12 is three days. */
 export const rentalDays = (start: Date, end: Date) => Math.round((end.getTime() - start.getTime()) / DAY_MS) + 1;
 
@@ -74,11 +125,20 @@ type ContractFacts = {
   endDate: Date;
   days: number;
   pricePerDayFcfa: number;
+  pricePerWeekFcfa: number | null;
+  pricePerMonthFcfa: number | null;
   totalFcfa: number;
   depositFcfa: number;
   kmPerDay: number;
   zone: string;
 };
+
+function priceClause(c: ContractFacts) {
+  const rates = { day: c.pricePerDayFcfa, week: c.pricePerWeekFcfa, month: c.pricePerMonthFcfa };
+  const bill = rentalPrice(c.days, rates);
+  // Billed by the day only: the wording of the first contract version, unchanged.
+  return bill.weeks || bill.months ? `Tarif appliqué : ${billText(bill, rates)}` : `${formatPrice(c.pricePerDayFcfa)} par jour`;
+}
 
 /**
  * The rental contract both sides sign. A first version to be amended by the lawyer:
@@ -93,7 +153,7 @@ export function contractText(c: ContractFacts) {
     "",
     `1. Véhicule. ${c.vehicle}.`,
     `2. Durée. Du ${formatDay(c.startDate)} au ${formatDay(c.endDate)} inclus, soit ${c.days} jour${c.days > 1 ? "s" : ""}. Le véhicule est restitué au plus tard le dernier jour.`,
-    `3. Prix. ${formatPrice(c.pricePerDayFcfa)} par jour, soit ${formatPrice(c.totalFcfa)} au total, réglés par le locataire au loueur au départ du véhicule.`,
+    `3. Prix. ${priceClause(c)}, soit ${formatPrice(c.totalFcfa)} au total, réglés par le locataire au loueur au départ du véhicule.`,
     `4. Dépôt de garantie. ${formatPrice(c.depositFcfa)}, remis au loueur au départ et restitué au retour, déduction faite des frais justifiés par l'état des lieux.`,
     `5. Kilométrage et zone. ${c.kmPerDay} km inclus par jour. Le véhicule circule dans la zone suivante : ${c.zone}.`,
     "6. Géolocalisation. Le véhicule est équipé d'un GPS par son propriétaire. Le locataire l'accepte séparément, dans les conditions affichées avant la signature.",

@@ -156,7 +156,9 @@ model Listing {
   // The price before the seller's last edit, kept until that edit is published and watchers are told.
   previousPriceFcfa Int?
   kind              ListingKind    @default(SALE)
-  // Rental offers only. For a rental, priceFcfa is the price per day.
+  // Rental offers only. For a rental, priceFcfa is the price per day; the week and month rates are optional.
+  pricePerWeekFcfa  Int?
+  pricePerMonthFcfa Int?
   depositFcfa       Int?
   kmPerDay          Int?
   zone              String?
@@ -305,6 +307,8 @@ model Booking {
   days              Int
   // Copied from the listing at request time, so a later edit cannot change an agreed price.
   pricePerDayFcfa   Int
+  pricePerWeekFcfa  Int?
+  pricePerMonthFcfa Int?
   totalFcfa         Int
   depositFcfa       Int
   renterFullName    String

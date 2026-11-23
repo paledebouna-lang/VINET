@@ -129,7 +129,9 @@ export default async function Admin() {
             </div>
             {listing.kind === "RENT" && (
               <p className="muted small">
-                Location : {formatPrice(listing.priceFcfa)} par jour · dépôt {formatPrice(listing.depositFcfa ?? 0)} ·{" "}
+                Location : {formatPrice(listing.priceFcfa)} par jour
+                {listing.pricePerWeekFcfa && ` · ${formatPrice(listing.pricePerWeekFcfa)} la semaine`}
+                {listing.pricePerMonthFcfa && ` · ${formatPrice(listing.pricePerMonthFcfa)} le mois`} · dépôt {formatPrice(listing.depositFcfa ?? 0)} ·{" "}
                 {listing.kmPerDay} km/jour · zone {listing.zone} · GPS {listing.gpsModel}, n° {listing.gpsSerial} ·{" "}
                 {listing.documents.map((doc) => (
                   <a key={doc.id} href={`/documents/${doc.id}`} target="_blank">

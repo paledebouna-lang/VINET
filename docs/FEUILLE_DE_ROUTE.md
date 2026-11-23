@@ -115,7 +115,8 @@ Reste à faire :
 - **Contrat à faire amender par le juriste** : c'est une première version, sans barème de retard ni de frais.
 - Signature confirmée par un code à usage unique : dépend des SMS.
 - Suivi GPS réel pendant la location : lot 6. Le lot 3 enregistre le GPS déclaré et le consentement.
-- Location à l'heure, à la semaine ou au mois, avec chauffeur, prolongation : seule la location à la journée existe.
+- **Prix à la semaine et au mois — fait.** Facultatifs, en plus du prix par jour. Le site facture la combinaison la moins chère de mois (30 jours), semaines (7 jours) et jours ; une semaine ou un mois peut couvrir quelques jours de plus si c'est moins cher. Un prix à la semaine qui n'est pas inférieur à 7 jours (ou au mois, à 30 jours et à 5 semaines) est refusé. Les prix sont copiés dans la demande : une modification de l'annonce ne change pas un prix demandé. Le contrat garde sa formule « X FCFA par jour » pour une location à la journée et écrit « Tarif appliqué : 1 semaine à … et 2 jours à … » sinon : nouvelle formule à faire relire par le juriste. La durée maximale reste 90 jours.
+- Location à l'heure, avec chauffeur, prolongation : pas encore.
 - Attestation d'assurance et permis en PDF : seules les photos sont acceptées.
 
 Sortie : une location complète réservation → départ → retour → clôture, sans intervention technique. Vérifié en local.

@@ -31,6 +31,8 @@ export default async function Modifier({ params }: PageProps<"/annonces/[id]/mod
           values: {
             kind: listing.kind,
             vehicleId: listing.vehicleId ?? "",
+            pricePerWeekFcfa: listing.pricePerWeekFcfa?.toString() ?? "",
+            pricePerMonthFcfa: listing.pricePerMonthFcfa?.toString() ?? "",
             depositFcfa: listing.depositFcfa?.toString() ?? "",
             kmPerDay: listing.kmPerDay?.toString() ?? "",
             zone: listing.zone ?? "",

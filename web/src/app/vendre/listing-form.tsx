@@ -188,6 +188,16 @@ export function ListingForm({
         <fieldset className="group">
           <legend>Conditions de location</legend>
           <div className="form-grid">
+            {input("pricePerWeekFcfa", "Prix à la semaine (FCFA), facultatif", {
+              inputMode: "numeric",
+              placeholder: "150 000",
+              required: false,
+            })}
+            {input("pricePerMonthFcfa", "Prix au mois (FCFA), facultatif", {
+              inputMode: "numeric",
+              placeholder: "500 000",
+              required: false,
+            })}
             {input("depositFcfa", "Dépôt de garantie (FCFA)", { inputMode: "numeric", placeholder: "200 000" })}
             {input("kmPerDay", "Kilomètres inclus par jour", { inputMode: "numeric", placeholder: "200" })}
             {input("zone", "Zone de circulation autorisée", { placeholder: "Grand Abidjan" })}

@@ -5,15 +5,16 @@ import type { FormState } from "../actions";
 import { FieldError } from "../field-error";
 import { requestBooking, saveInspection } from "../rental-actions";
 import { formatPrice } from "@/lib/listing";
-import { FUEL_LEVELS, parseDay, rentalDays } from "@/lib/rental";
+import { FUEL_LEVELS, type Rates, billText, parseDay, rentalDays, rentalPrice } from "@/lib/rental";
 
-export function BookingForm({ listingId, pricePerDay, today }: { listingId: string; pricePerDay: number; today: string }) {
+export function BookingForm({ listingId, rates, today }: { listingId: string; rates: Rates; today: string }) {
   const [state, action, pending] = useActionState<FormState, FormData>(requestBooking, {});
   const v = state.values ?? {};
   const [start, setStart] = useState(v.startDate ?? "");
   const [end, setEnd] = useState(v.endDate ?? "");
   const [from, to] = [parseDay(start), parseDay(end)];
   const days = from && to && to >= from ? rentalDays(from, to) : null;
+  const bill = days ? rentalPrice(days, rates) : null;
 
   return (
     <form action={action} className="stack">
@@ -49,8 +50,9 @@ export function BookingForm({ listingId, pricePerDay, today }: { listingId: stri
         </div>
       </div>
       <p className="muted small" aria-live="polite">
-        {days
-          ? `${days} jour${days > 1 ? "s" : ""}, les deux dates comprises : ${formatPrice(days * pricePerDay)}`
+        {days && bill
+          ? `${days} jour${days > 1 ? "s" : ""}, les deux dates comprises : ${formatPrice(bill.total)}` +
+            (bill.weeks || bill.months ? ` (${billText(bill, rates)})` : "")
           : "Le jour du départ et le jour du retour sont comptés."}
       </p>
       <div className="field">
