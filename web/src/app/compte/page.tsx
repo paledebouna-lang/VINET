@@ -74,14 +74,14 @@ export default async function Compte() {
           </Link>
         )}
         {user.role === "admin" && (
-          <>
-            <Link href="/admin" className="btn btn-ghost">
-              Modération
-            </Link>
-            <Link href="/compte/securite" className="btn btn-ghost">
-              Double vérification
-            </Link>
-          </>
+          <Link href="/admin" className="btn btn-ghost">
+            Modération
+          </Link>
+        )}
+        {(user.role === "admin" || user.role === "agence") && (
+          <Link href="/compte/securite" className="btn btn-ghost">
+            Double vérification
+          </Link>
         )}
         <SignOutButton />
       </div>

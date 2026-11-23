@@ -88,7 +88,7 @@ sudo -u monauto bash -c 'cd /opt/monauto/app/web && /opt/monauto/node/bin/node -
 
 Déconnectez-vous puis reconnectez-vous. Dans « Mon compte », le bouton « Double vérification pour ouvrir l'administration » apparaît : un administrateur doit, en plus du code reçu par e-mail, taper un code donné par une application d'authentification sur son téléphone (Google Authenticator, Microsoft Authenticator…). À la première visite, scannez le QR code affiché, puis tapez le code de l'application. Ensuite, ce code est demandé à chaque nouvelle connexion.
 
-**Téléphone perdu ou changé** : la double vérification se réinitialise depuis le serveur seulement ; à la visite suivante, l'administrateur configure sa nouvelle application.
+**Téléphone perdu ou changé** : la double vérification se réinitialise depuis le serveur seulement ; à la visite suivante, l'administrateur configure sa nouvelle application. Les comptes **agence** ont la même double vérification, configurée à leur première connexion ; pour une agence qui a perdu son téléphone, la même commande s'applique avec l'adresse de l'agence.
 
 ```bash
 sudo -u monauto bash -c 'cd /opt/monauto/app/web && /opt/monauto/node/bin/node --env-file=.env scripts/reset-mfa.mjs votre@adresse.ci'

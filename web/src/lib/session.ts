@@ -5,25 +5,38 @@ import { prisma } from "./db";
 
 const currentSession = async () => auth.api.getSession({ headers: await headers() });
 
+// Accounts that need the code of an authenticator app, on top of the e-mail code, once per session.
+const SECOND_FACTOR_ROLES = ["admin", "agence"];
+
 /**
- * The signed-in account. An admin who has not typed their authenticator code in this session
- * acts as an ordinary account everywhere, so no admin right can be reached without it.
+ * The account and whether its second factor is still to be typed in this session. An admin acts as
+ * an ordinary account until then; an agency account has no access at all, since what it holds
+ * (its fleet's positions, its customers' documents) is what the second factor protects.
  */
-export async function getUser() {
+async function resolveUser() {
   const session = await currentSession();
   if (!session) return null;
   const { user } = session;
-  if (user.role === "admin") {
+  if (SECOND_FACTOR_ROLES.includes(user.role)) {
     const verified = await prisma.session.findUnique({ where: { id: session.session.id }, select: { mfaVerifiedAt: true } });
-    if (!verified?.mfaVerifiedAt) return { ...user, role: "particulier", adminPending: true };
+    if (!verified?.mfaVerifiedAt) {
+      return { user: { ...user, role: "particulier", adminPending: user.role === "admin" }, agencyPending: user.role === "agence" };
+    }
   }
-  return { ...user, adminPending: false };
+  return { user: { ...user, adminPending: false }, agencyPending: false };
+}
+
+/** The signed-in account, or null. An agency account waiting for its second factor counts as signed out. */
+export async function getUser() {
+  const resolved = await resolveUser();
+  return resolved && !resolved.agencyPending ? resolved.user : null;
 }
 
 export async function requireUser() {
-  const user = await getUser();
-  if (!user) redirect("/connexion");
-  return user;
+  const resolved = await resolveUser();
+  if (!resolved) redirect("/connexion");
+  if (resolved.agencyPending) redirect("/compte/securite");
+  return resolved.user;
 }
 
 // 404 rather than 403: the admin area does not advertise itself.
@@ -34,11 +47,11 @@ export async function requireAdmin() {
   return user;
 }
 
-/** For the second-factor screen only: an admin account and its session, verified or not. */
-export async function requireAdminSession() {
+/** For the second-factor screen only: an account that needs one, and its session, verified or not. */
+export async function requireSecondFactorSession() {
   const session = await currentSession();
   if (!session) redirect("/connexion");
-  if (session.user.role !== "admin") notFound();
+  if (!SECOND_FACTOR_ROLES.includes(session.user.role)) notFound();
   return session;
 }
 

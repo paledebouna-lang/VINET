@@ -639,7 +639,7 @@ model Detection {
   @@map("detection")
 }
 
-// Second factor of an admin account: the secret shared with an authenticator app (RFC 6238).
+// Second factor of an admin or agency account: the secret shared with an authenticator app (RFC 6238).
 // Kept apart from the user row, which the sign-in library reads and sends to the browser.
 model AdminMfa {
   userId        String    @id

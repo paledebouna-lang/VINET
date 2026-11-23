@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import type { FormState } from "./actions";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/session";
+import { requireSecondFactorSession } from "@/lib/session";
 import { matchTotp } from "@/lib/totp";
 import { openKey } from "@/lib/vinet";
 
@@ -14,11 +14,11 @@ const audit = (action: string, actorId: string, ip?: string | null) =>
   prisma.auditLog.create({ data: { action, actorId, ip } });
 
 /**
- * Checks the code typed by an admin against their secret (the pending one during setup), and on
+ * Checks the code typed by an admin or an agency against their secret (the pending one during setup), and on
  * success marks this session as verified. Five wrong codes block the account for 15 minutes.
  */
-export async function verifyAdminCode(_prev: FormState, formData: FormData): Promise<FormState> {
-  const { user, session } = await requireAdminSession();
+export async function verifySecondFactor(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { user, session } = await requireSecondFactorSession();
   const failures = await prisma.auditLog.count({
     where: { action: "mfa.failed", actorId: user.id, at: { gt: new Date(Date.now() - FAILURE_WINDOW_MS) } },
   });
@@ -46,5 +46,5 @@ export async function verifyAdminCode(_prev: FormState, formData: FormData): Pro
 
   await prisma.session.update({ where: { id: session.id }, data: { mfaVerifiedAt: new Date() } });
   await audit(setup ? "mfa.enabled" : "mfa.verified", user.id, session.ipAddress);
-  redirect("/admin");
+  redirect(user.role === "admin" ? "/admin" : "/compte");
 }
